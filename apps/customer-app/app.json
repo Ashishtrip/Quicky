@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Quicky",
+    "slug": "quicky-customer",
+    "version": "1.0.0",
+    "scheme": "quicky",
+    "orientation": "portrait",
+    "icon": "./assests/Screenshot 2026-07-12 at 12.07.56 PM.png",
+    "platforms": [
+      "android",
+      "ios"
+    ],
+    "newArchEnabled": false,
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/messaging",
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          },
+          "ios": {
+            "deploymentTarget": "15.1",
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "android": {
+      "package": "com.quicky.customer",
+      "googleServicesFile": "./google-services.json"
+    },
+    "ios": {
+      "bundleIdentifier": "com.quicky.customer",
+      "supportsTablet": false,
+      "googleServicesFile": "./GoogleService-Info.plist"
+    }
+  }
+}

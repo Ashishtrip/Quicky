@@ -1,0 +1,13 @@
+{
+  "android": {
+    "package": "com.anonymous.quicky"
+  },
+  "ios": {
+    "bundleIdentifier": "com.anonymous.quicky"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "babbdc32-9287-4b6f-99af-b3197da34aa0"
+    }
+  }
+}

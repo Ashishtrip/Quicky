@@ -1,0 +1,7 @@
+- [x] Modify `schema.prisma` to include `freshnessRating` and `freshnessRatingAt` in the `Order` model.
+- [x] Update Dependencies in `apps/api/package.json` to include `google-auth-library` and `@googleapis/sheets`.
+- [x] Create `googleSheetsService.ts` and `ratingService.ts`.
+- [x] Implement the Express route `rating.ts` in `apps/api/src/routes/` and register it in `index.ts`.
+- [x] In the `customer-app`, implement the automatic rating prompt trigger (simulated after order acceptance/delivery in MVP).
+- [x] Add React Query hook `useSubmitRating` in the shared `@quicky/api-client` package.to include the rating endpoint.
+- [x] Update Customer App to track order state and automatically show the rating prompt when an order is completed/delivered.

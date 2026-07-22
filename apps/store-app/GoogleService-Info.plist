@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>409651630637-1646l81jo7bhna9bh0rmb2dm5rvj59q5.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.409651630637-1646l81jo7bhna9bh0rmb2dm5rvj59q5</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCpNTdryx0xriPlBWF0dUHOzlqE13Y7VUA</string>
+	<key>GCM_SENDER_ID</key>
+	<string>409651630637</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.quicky.store</string>
+	<key>PROJECT_ID</key>
+	<string>quicky-ae33e</string>
+	<key>STORAGE_BUCKET</key>
+	<string>quicky-ae33e.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:409651630637:ios:ec73320b07eb0cb1b1dea4</string>
+</dict>
+</plist>

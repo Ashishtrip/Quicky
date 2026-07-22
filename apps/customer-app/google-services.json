@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "409651630637",
+    "project_id": "quicky-ae33e",
+    "storage_bucket": "quicky-ae33e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:409651630637:android:97b14a0a14a31725b1dea4",
+        "android_client_info": {
+          "package_name": "com.quicky.customer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "409651630637-j7o8kdi92p40vheil2eluoblu9i8ai9j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWHRZJg8wICfXnDKKQxrJloXk9wgKneTE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "409651630637-j7o8kdi92p40vheil2eluoblu9i8ai9j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "409651630637-1646l81jo7bhna9bh0rmb2dm5rvj59q5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.quicky.store"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:409651630637:android:a69cbf1364c650e0b1dea4",
+        "android_client_info": {
+          "package_name": "com.quicky.store"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "409651630637-j7o8kdi92p40vheil2eluoblu9i8ai9j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWHRZJg8wICfXnDKKQxrJloXk9wgKneTE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "409651630637-j7o8kdi92p40vheil2eluoblu9i8ai9j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "409651630637-1646l81jo7bhna9bh0rmb2dm5rvj59q5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.quicky.store"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

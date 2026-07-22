@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Quicky Store",
+    "slug": "quicky-store",
+    "version": "1.0.0",
+    "scheme": "quicky-store",
+    "orientation": "portrait",
+    "icon": "./assests/Screenshot 2026-07-12 at 12.07.56 PM.png",
+    "platforms": ["android", "ios"],
+    "newArchEnabled": true,
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/messaging",
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          },
+          "ios": {
+            "deploymentTarget": "15.1",
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.quicky.store",
+      "googleServicesFile": "./google-services.json"
+    },
+    "ios": {
+      "bundleIdentifier": "com.quicky.store",
+      "supportsTablet": false,
+      "googleServicesFile": "./GoogleService-Info.plist"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@quicky/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "generate": "tsx scripts/generate-client.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.20.0",
+    "axios": "^1.6.0",
+    "zod": "^3.22.0",
+    "@quicky/shared-types": "*",
+    "@quicky/config": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.3.0",
+    "eslint": "^8.57.0",
+    "@quicky/eslint-config": "*",
+    "tsx": "^4.7.0",
+    "openapi-typescript": "^6.7.0"
+  }
+}

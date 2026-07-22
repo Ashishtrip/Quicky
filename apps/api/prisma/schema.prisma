@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentMethod {
+  COD
+  CREDIT_CARD
+  PAYPAL
+  UPI
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders  Order[]
+  reviews Review[]
+  addresses Address[]
+}
+
+model Category {
+  id                     String   @id @default(uuid())
+  name                   String
+  nameHindi              String?
+  description            String?
+  useTodayDiscountPct    Float
+  estimatedShelfLifeDays Int?
+  sortOrder              Int      @default(0)
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  catalogItems CatalogItem[]
+}
+
+model CatalogItem {
+  id           String   @id @default(uuid())
+  categoryId   String
+  category     Category @relation(fields: [categoryId], references: [id])
+  name         String
+  nameHindi    String?
+  description  String?
+  unit         String
+  imageUrl     String?
+  referenceMrp Float?
+  barcode      String?
+  tags         String[]
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  listings   Listing[]
+  orderItems OrderItem[]
+}
+
+model Store {
+  id                    String    @id @default(uuid())
+  name                  String
+  nameHindi             String?
+  description           String?
+  latitude              Float
+  longitude             Float
+  deliveryRadiusKm      Float     @default(2.5)
+  address               String
+  addressHindi          String?
+  phone                 String
+  ownerName             String
+  ownerPhone            String
+  imageUrl              String?
+  rating                Float     @default(0)
+  totalRatings          Int       @default(0)
+  contactEmail          String?
+  contactPhone          String?
+  gstNumber             String?
+  isActive              Boolean   @default(true)
+  isVerified            Boolean   @default(false)
+  isOpen                Boolean   @default(false)
+  commissionPct         Float     @default(12)
+  deliveryFee           Float?
+  freeDeliveryThreshold Float?
+  fcmToken              String?
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  listings Listing[]
+  orders   Order[]
+  tickets  OrderTicket[]
+  reviews  Review[]
+}
+
+model Listing {
+  id                String      @id @default(uuid())
+  storeId           String
+  store             Store       @relation(fields: [storeId], references: [id])
+  catalogItemId     String
+  catalogItem       CatalogItem @relation(fields: [catalogItemId], references: [id])
+  price             Float
+  stockQuantity     Int
+  expiryBucket      String // 'USE_TODAY' or 'FRESH_STOCK'
+  manufacturingDate DateTime?
+  lastConfirmedAt   DateTime    @default(now())
+  isUnverified      Boolean     @default(false)
+  isActive          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@unique([storeId, catalogItemId])
+}
+
+model Order {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  status            String    @default("PENDING") // PENDING, ACCEPTED, FULFILLED, CANCELLED, AWAITING_PAYMENT
+  totalAmount       Float
+  deliveryFee       Float     @default(0)
+  assignedStoreId   String?
+  assignedStore     Store?    @relation(fields: [assignedStoreId], references: [id])
+  freshnessRating   String?
+  freshnessRatingAt DateTime?
+  orderDate         DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  items    OrderItem[]
+  tickets  OrderTicket[]
+  payment  Payment?
+  delivery Delivery?
+}
+
+model OrderItem {
+  id              String      @id @default(uuid())
+  orderId         String
+  order           Order       @relation(fields: [orderId], references: [id])
+  catalogItemId   String
+  catalogItem     CatalogItem @relation(fields: [catalogItemId], references: [id])
+  quantity        Int
+  price           Float
+  discountedPrice Float?
+  expiryBucket    String // USE_TODAY or FRESH_STOCK
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderTicket {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  status    String   @default("BROADCASTED") // BROADCASTED, ACCEPTED, MISSED, DECLINED
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orderId, storeId])
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  order         Order         @relation(fields: [orderId], references: [id])
+  paymentMethod PaymentMethod @default(COD)
+  amount        Float
+  paymentStatus String        @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Delivery {
+  id                String    @id @default(uuid())
+  orderId           String    @unique
+  order             Order     @relation(fields: [orderId], references: [id])
+  deliveryAddress   String
+  deliveryStatus    String    @default("PENDING") // PENDING, IN_TRANSIT, DELIVERED, CANCELLED
+  estimatedDelivery DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  trackings Tracking[]
+}
+
+model Tracking {
+  id            String   @id @default(uuid())
+  deliveryId    String
+  delivery      Delivery @relation(fields: [deliveryId], references: [id])
+  currentStatus String
+  location      String
+  lastUpdated   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Address {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  label     String   // Home, Work, etc.
+  street    String
+  city      String
+  state     String
+  pincode   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

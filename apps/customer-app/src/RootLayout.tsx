@@ -1,0 +1,78 @@
+import React, { useEffect, useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { initApiClient } from '@quicky/api-client';
+import { useCartStore } from './stores/cartStore';
+import { useAuthStore } from './stores/authStore';
+import { AppNavigator } from './navigation/AppNavigator';
+import { View, ActivityIndicator, Text, Platform } from 'react-native';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
+const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
+initApiClient({ baseUrl: API_BASE_URL });
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 30_000,
+    },
+  },
+});
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
+export default function RootLayout() {
+  const [isReady, setIsReady] = useState(true);
+  const { isLoading: isAuthLoading, setUser, setLoading, setIsOnboarded } = useAuthStore();
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: process.env['EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID'] || '409651630637-j7o8kdi92p40vheil2eluoblu9i8ai9j.apps.googleusercontent.com',
+    });
+
+    const subscriber = auth().onAuthStateChanged(async (user) => {
+      setUser(user);
+      if (user) {
+        // Always mark as onboarded — profile completion is optional
+        setIsOnboarded(true);
+        try {
+          const userDoc = await firestore().collection('users').doc(user.uid).get();
+          if (!(typeof userDoc.exists === 'function' ? userDoc.exists() : userDoc.exists)) {
+            // Auto-create a minimal user doc for new sign-ups
+            await firestore().collection('users').doc(user.uid).set({
+              name: user.displayName || '',
+              email: user.email || '',
+              phone: user.phoneNumber || '',
+              role: 'customer',
+              isOnboarded: true,
+              createdAt: firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        } catch (e) {
+          console.error('Error syncing user doc:', e);
+        }
+      }
+      setLoading(false);
+    });
+
+    return subscriber;
+  }, [setUser, setLoading, setIsOnboarded]);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider style={{ flex: 1 }}>
+        <AppNavigator isReady={isReady} isAuthLoading={isAuthLoading} />
+      </SafeAreaProvider>
+    </QueryClientProvider>
+  );
+}
