@@ -6,7 +6,10 @@
     "scheme": "quicky-store",
     "orientation": "portrait",
     "icon": "./assests/Screenshot 2026-07-12 at 12.07.56 PM.png",
-    "platforms": ["android", "ios"],
+    "platforms": [
+      "android",
+      "ios"
+    ],
     "newArchEnabled": true,
     "plugins": [
       "@react-native-firebase/app",
@@ -35,6 +38,12 @@
       "bundleIdentifier": "com.quicky.store",
       "supportsTablet": false,
       "googleServicesFile": "./GoogleService-Info.plist"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4ee6cee2-b0f9-4996-a8bd-abe231c492ef"
+      }
+    },
+    "owner": "ashishtrip"
   }
 }
