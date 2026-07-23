@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { Platform } from 'react-native';
 
-const API_BASE_URL = 'https://36bdea98f03cb8.lhr.life'; // Updated to use localtunnel URL for remote physical device
+const API_BASE_URL = 'https://quicky-production.up.railway.app';
 
 class SocketService {
   private socket: Socket | null = null;
