@@ -109,12 +109,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env['PORT'] || 3000;
 
-// CRITICAL: Explicitly hardcode '0.0.0.0' as the host. 
-// Do NOT use process.env.RAILWAY_PRIVATE_DOMAIN or 'localhost'
-const HOST = '0.0.0.0'; 
-
-httpServer.listen(Number(PORT), HOST, () => {
-  console.log(`Server successfully listening on public interface http://${HOST}:${PORT}`);
+// Change this back to localhost for your local machine
+httpServer.listen(Number(PORT), 'localhost', () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
