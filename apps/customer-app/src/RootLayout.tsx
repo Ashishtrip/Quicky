@@ -8,9 +8,8 @@ import { AppNavigator } from './navigation/AppNavigator';
 import { View, ActivityIndicator, Text, Platform } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
+const API_BASE_URL = 'https://36bdea98f03cb8.lhr.life'; // Updated to use localtunnel URL for remote physical device
 initApiClient({ baseUrl: API_BASE_URL });
 
 const queryClient = new QueryClient({
@@ -36,10 +35,6 @@ export default function RootLayout() {
   const { isLoading: isAuthLoading, setUser, setLoading, setIsOnboarded } = useAuthStore();
 
   useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: process.env['EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID'] || '409651630637-j7o8kdi92p40vheil2eluoblu9i8ai9j.apps.googleusercontent.com',
-    });
-
     const subscriber = auth().onAuthStateChanged(async (user) => {
       setUser(user);
       if (user) {

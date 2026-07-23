@@ -20,7 +20,7 @@ export const AboutScreen = () => {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.logoContainer}>
           <Image 
-            source={require('../../assests/Screenshot 2026-07-12 at 12.07.56 PM.png')} 
+            source={require('../../assests/icon.png')} 
             style={styles.logoPlaceholder} 
           />
           <Text style={styles.appName}>Quicky</Text>

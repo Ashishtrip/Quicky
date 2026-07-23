@@ -71,7 +71,7 @@ export const ProfileScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.topAppBar}>
         <Image 
-          source={require('../../assests/Screenshot 2026-07-12 at 12.07.56 PM.png')} 
+          source={require('../../assests/icon.png')} 
           style={{ width: 100, height: 40, resizeMode: 'contain' }} 
         />
       </View>

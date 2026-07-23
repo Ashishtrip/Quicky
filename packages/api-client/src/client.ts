@@ -27,6 +27,7 @@ export function initApiClient(config: ApiClientConfig = {}): AxiosInstance {
     timeout: config.timeout || 15_000,
     headers: {
       'Content-Type': 'application/json',
+      'Bypass-Tunnel-Reminder': 'true',
     },
   });
 

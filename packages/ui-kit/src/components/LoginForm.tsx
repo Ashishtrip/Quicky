@@ -6,12 +6,11 @@ import { Spacing, Colors, Typography } from '../theme/tokens';
 
 export interface LoginFormProps {
   onSubmit: (email: string, password: string) => void;
-  onGoogleLogin?: () => void;
   onNavigateToSignup?: () => void;
   isLoading?: boolean;
 }
 
-export const LoginForm = ({ onSubmit, onGoogleLogin, onNavigateToSignup, isLoading }: LoginFormProps) => {
+export const LoginForm = ({ onSubmit, onNavigateToSignup, isLoading }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -42,16 +41,6 @@ export const LoginForm = ({ onSubmit, onGoogleLogin, onNavigateToSignup, isLoadi
         style={styles.submitButton}
       />
 
-      {onGoogleLogin && (
-        <Button
-          title="Sign in with Google"
-          variant="secondary"
-          onPress={onGoogleLogin}
-          disabled={isLoading}
-          style={styles.googleButton}
-        />
-      )}
-
       {onNavigateToSignup && (
         <View style={styles.footer}>
           <Text style={styles.footerText}>Don't have an account? </Text>
@@ -69,9 +58,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   submitButton: {
-    marginTop: Spacing.md,
-  },
-  googleButton: {
     marginTop: Spacing.md,
   },
   footer: {

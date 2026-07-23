@@ -12,13 +12,6 @@ jest.mock('@react-native-firebase/auth', () => {
   });
 });
 
-jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: {
-    hasPlayServices: jest.fn().mockResolvedValue(true),
-    signIn: jest.fn().mockResolvedValue({ data: { idToken: 'mock-id-token' } }),
-  },
-}));
-
 describe('Customer App LoginScreen', () => {
   beforeAll(() => {
     jest.useFakeTimers();

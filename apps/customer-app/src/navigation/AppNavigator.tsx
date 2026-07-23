@@ -197,7 +197,7 @@ function SplashScreen() {
   return (
     <View style={splashStyles.container}>
       <Image
-        source={require('../../assests/Screenshot 2026-07-12 at 12.07.56 PM.png')}
+        source={require('../../assests/icon.png')}
         style={splashStyles.icon}
         resizeMode="contain"
       />

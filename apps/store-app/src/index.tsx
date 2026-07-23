@@ -9,7 +9,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Platform, ActivityIndicator, View, Pressable, Text, StyleSheet, Image } from 'react-native';
 import { initApiClient } from '@quicky/api-client';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -249,11 +248,6 @@ const App = () => {
   useEffect(() => {
     let mounted = true;
     
-    // Configure Google Sign-In
-    GoogleSignin.configure({
-      webClientId: '409651630637-j7o8kdi92p40vheil2eluoblu9i8ai9j.apps.googleusercontent.com',
-    });
-
     // Listen to Firebase Auth state
     const subscriber = auth().onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {

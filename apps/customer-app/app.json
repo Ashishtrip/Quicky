@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "scheme": "quicky",
     "orientation": "portrait",
-    "icon": "./assests/Screenshot 2026-07-12 at 12.07.56 PM.png",
+    "icon": "./assests/icon.png",
     "platforms": [
       "android",
       "ios"
@@ -15,7 +15,6 @@
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "@react-native-firebase/messaging",
-      "@react-native-google-signin/google-signin",
       [
         "expo-build-properties",
         {
@@ -40,6 +39,11 @@
       "bundleIdentifier": "com.quicky.customer",
       "supportsTablet": false,
       "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0c597693-03ca-40ac-b467-742a7d373d23"
+      }
     }
   }
 }

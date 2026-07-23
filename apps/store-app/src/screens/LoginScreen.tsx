@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const COLORS = {
   surface: '#f6fafa',
@@ -31,23 +30,6 @@ export const LoginScreen = ({ navigation }: any) => {
       await auth().signInWithEmailAndPassword(email, password);
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'An error occurred during login');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setIsLoading(true);
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      const { data } = await GoogleSignin.signIn();
-      if (!data?.idToken) throw new Error('No ID token found');
-      
-      const googleCredential = auth.GoogleAuthProvider.credential(data.idToken);
-      await auth().signInWithCredential(googleCredential);
-    } catch (error: any) {
-      console.log('Google login error:', error);
-      Alert.alert('Google Login Failed', error.message || 'An error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -118,29 +100,11 @@ export const LoginScreen = ({ navigation }: any) => {
             </Pressable>
           </View>
 
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.footerActions}>
+          <View style={[styles.footerActions, { marginTop: 16 }]}>
             <Pressable 
               style={({ pressed }) => [
                 styles.secondaryButton,
                 pressed && styles.buttonPressed
-              ]}
-              onPress={handleGoogleLogin}
-              disabled={isLoading}
-            >
-              <Text style={styles.secondaryButtonText}>Sign in with Google</Text>
-            </Pressable>
-
-            <Pressable 
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.buttonPressed,
-                { marginTop: 12 }
               ]}
               onPress={() => navigation.navigate('Signup')}
               disabled={isLoading}
@@ -259,22 +223,6 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.outlineVariant,
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    fontSize: 12,
-    color: COLORS.onSurfaceVariant,
-    textTransform: 'uppercase',
   },
   footerActions: {
     alignItems: 'center',
