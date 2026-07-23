@@ -24,7 +24,6 @@ const io = new Server(httpServer, {
     methods: ['GET', 'POST']
   }
 });
-const port = process.env['PORT'] || 4000;
 
 // Setup Socket.io Namespaces
 const userIo = io.of('/user');
@@ -90,7 +89,6 @@ redisSubscriber.on('message', (channel, message) => {
   }
 });
 
-const PORT = process.env['PORT'] || 3001;
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
@@ -111,6 +109,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-httpServer.listen(port, () => {
-  console.log(`🚀 Quicky API is running on http://localhost:${port}`);
+const PORT = process.env.PORT || 3000;
+
+// CRITICAL: Explicitly hardcode '0.0.0.0' as the host. 
+// Do NOT use process.env.RAILWAY_PRIVATE_DOMAIN or 'localhost'
+const HOST = '0.0.0.0'; 
+
+httpServer.listen(Number(PORT), HOST, () => {
+  console.log(`Server successfully listening on public interface http://${HOST}:${PORT}`);
 });

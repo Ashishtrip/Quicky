@@ -6,10 +6,11 @@ import Redlock from 'redlock';
 const redisUrl = process.env['REDIS_URL'] || 'redis://localhost:6379';
 
 export const redis = new Redis(redisUrl, {
+  // CRITICAL: Forces Node to look for both IPv4 and IPv6 records on Railway's private mesh network
+  family: 0, 
   maxRetriesPerRequest: null,
   retryStrategy(times) {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
+    return Math.min(times * 50, 2000);
   }
 });
 
