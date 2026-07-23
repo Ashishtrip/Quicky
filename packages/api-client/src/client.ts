@@ -8,7 +8,7 @@ declare const console: {
  * Default API base URL — overridable via config
  * In development, the RN app connects to the local Express server
  */
-const DEFAULT_BASE_URL = 'quicky-production.up.railway.app';
+const DEFAULT_BASE_URL = 'https://quicky-production.up.railway.app';
 
 let _client: AxiosInstance | null = null;
 
