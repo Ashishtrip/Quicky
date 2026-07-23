@@ -11,6 +11,7 @@
     "dev:customer": "yarn workspace @quicky/customer-app dev",
     "dev:store": "yarn workspace @quicky/store-app dev",
     "dev:api": "yarn workspace @quicky/api dev",
+    "start": "yarn workspace @quicky/api start",
     "build": "yarn workspaces run build",
     "lint": "yarn workspaces run lint",
     "typecheck": "yarn workspaces run typecheck",
