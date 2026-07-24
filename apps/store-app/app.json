@@ -39,6 +39,11 @@
       "supportsTablet": false,
       "googleServicesFile": "./GoogleService-Info.plist"
     },
-
+    "extra": {
+      "eas": {
+        "projectId": "7bff5b49-ab33-417d-9e13-94db2cd1317b"
+      }
+    },
+    "owner": "trriippeerr"
   }
 }
