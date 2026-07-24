@@ -283,7 +283,7 @@ const App = () => {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <Image
-          source={require('../assests/Screenshot 2026-07-12 at 12.07.56 PM.png')}
+          source={require('../assests/splash-logo.png')}
           style={{ width: 120, height: 120, borderRadius: 24 }}
           resizeMode="contain"
         />

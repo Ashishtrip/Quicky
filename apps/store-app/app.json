@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "scheme": "quicky-store",
     "orientation": "portrait",
-    "icon": "./assests/Screenshot 2026-07-12 at 12.07.56 PM.png",
+    "icon": "./assests/splash-logo.png",
     "platforms": [
       "android",
       "ios"
