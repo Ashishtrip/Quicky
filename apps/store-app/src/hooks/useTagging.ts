@@ -5,8 +5,15 @@ import { Platform } from 'react-native';
 
 const envApiUrl = process.env['EXPO_PUBLIC_API_URL'];
 let API_URL = envApiUrl || 'https://quicky-production.up.railway.app';
+if (API_URL && !API_URL.startsWith('http')) {
+  API_URL = `https://${API_URL}`;
+}
+API_URL = API_URL.replace(/\/$/, '');
 if (!__DEV__ && (API_URL.includes('localhost') || API_URL.includes('10.0.2.2'))) {
   API_URL = 'https://quicky-production.up.railway.app';
+}
+if (!__DEV__ && API_URL.startsWith('http://') && !API_URL.includes('localhost') && !API_URL.includes('10.0.2.2')) {
+  API_URL = API_URL.replace('http://', 'https://');
 }
 import { useAuthStore } from '../stores/authStore';
 
