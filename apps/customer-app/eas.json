@@ -15,7 +15,10 @@
       }
     },
     "production": {
-      "distribution": "store"
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://quicky-production.up.railway.app"
+      }
     }
   }
 }

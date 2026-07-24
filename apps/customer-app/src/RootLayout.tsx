@@ -9,7 +9,11 @@ import { View, ActivityIndicator, Text, Platform } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
-const API_BASE_URL = 'https://36bdea98f03cb8.lhr.life'; // Updated to use localtunnel URL for remote physical device
+const envApiUrl = process.env['EXPO_PUBLIC_API_URL'];
+let API_BASE_URL = envApiUrl || 'https://quicky-production.up.railway.app';
+if (!__DEV__ && (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('10.0.2.2'))) {
+  API_BASE_URL = 'https://quicky-production.up.railway.app';
+}
 initApiClient({ baseUrl: API_BASE_URL });
 
 const queryClient = new QueryClient({

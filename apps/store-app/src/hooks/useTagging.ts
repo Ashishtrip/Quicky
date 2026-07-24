@@ -3,7 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Platform } from 'react-native';
 
-const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
+const envApiUrl = process.env['EXPO_PUBLIC_API_URL'];
+let API_URL = envApiUrl || 'https://quicky-production.up.railway.app';
+if (!__DEV__ && (API_URL.includes('localhost') || API_URL.includes('10.0.2.2'))) {
+  API_URL = 'https://quicky-production.up.railway.app';
+}
 import { useAuthStore } from '../stores/authStore';
 
 /**

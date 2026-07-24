@@ -34,7 +34,7 @@ export const useStoreData = () => {
       .doc(user.uid)
       .onSnapshot(
         (documentSnapshot) => {
-          if (documentSnapshot.exists()) {
+          if (typeof documentSnapshot.exists === 'function' ? documentSnapshot.exists() : documentSnapshot.exists) {
             setStoreData(documentSnapshot.data() as StoreData);
           } else {
             setStoreData(null);

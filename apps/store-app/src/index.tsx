@@ -14,7 +14,11 @@ import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
 
-const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
+const envApiUrl = process.env['EXPO_PUBLIC_API_URL'];
+let API_BASE_URL = envApiUrl || 'https://quicky-production.up.railway.app';
+if (!__DEV__ && (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('10.0.2.2'))) {
+  API_BASE_URL = 'https://quicky-production.up.railway.app';
+}
 initApiClient({ baseUrl: API_BASE_URL });
 
 import { DashboardScreen } from './screens/Dashboard';
