@@ -14,7 +14,7 @@ import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
 
-const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
+const envApiUrl = process.env['EXPO_PUBLIC_API_URL'];
 let API_BASE_URL = envApiUrl || 'https://quicky-production.up.railway.app';
 if (API_BASE_URL && !API_BASE_URL.startsWith('http')) {
   API_BASE_URL = `https://${API_BASE_URL}`;
