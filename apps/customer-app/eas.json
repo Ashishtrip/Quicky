@@ -11,7 +11,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://olive-buckets-worry.loca.lt"
+        "EXPO_PUBLIC_API_URL": "https://quicky-production.up.railway.app"
       },
       "android": {
         "buildType": "apk"
@@ -20,7 +20,7 @@
     "production": {
       "distribution": "store",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://olive-buckets-worry.loca.lt"
+        "EXPO_PUBLIC_API_URL": "https://quicky-production.up.railway.app"
       }
     }
   }

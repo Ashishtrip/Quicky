@@ -111,7 +111,7 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env['PORT'] || 3000;
 
-// Bind to localhost by default to prevent EPERM in local/sandbox environments
-httpServer.listen(Number(PORT), () => {
+// Bind to 0.0.0.0 for Railway to correctly route traffic
+httpServer.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
