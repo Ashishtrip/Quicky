@@ -51,7 +51,7 @@ ordersRouter.post("/:orderId/cancel", async (req: Request<{ orderId: string }>, 
       return res.status(404).json({ error: "Order not found" });
     }
 
-    if (order.status !== "PENDING") {
+    if (order.status !== "PENDING" && order.status !== "ACCEPTED") {
       return res.status(400).json({ error: `Cannot cancel order in status: ${order.status}` });
     }
 

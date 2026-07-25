@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -137,9 +137,9 @@ export function OrderStatusScreen() {
               Broadcasting your order to nearby kirana stores with matching inventory.
             </Text>
             
-            <View style={styles.cancelContainer}>
-              <Text style={styles.cancelText} onPress={handleCancel}>Cancel Order</Text>
-            </View>
+            <Pressable style={styles.cancelContainer} onPress={handleCancel}>
+              <Text style={styles.cancelText}>Cancel Order</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -157,9 +157,9 @@ export function OrderStatusScreen() {
             </View>
 
             {cancelCountdown > 0 && (
-              <View style={styles.cancelContainer}>
-                <Text style={styles.cancelText} onPress={handleCancel}>Cancel Order ({cancelCountdown}s)</Text>
-              </View>
+              <Pressable style={styles.cancelContainer} onPress={handleCancel}>
+                <Text style={styles.cancelText}>Cancel Order ({cancelCountdown}s)</Text>
+              </Pressable>
             )}
 
             {orderData?.assignedStore?.latitude && customerLocation && (
