@@ -15,7 +15,7 @@ router.patch('/:storeId', authenticateToken, async (req, res) => {
     }
     const { isOpen, deliveryRadius, latitude, longitude, name, address, phone, ownerName, ownerPhone, contactEmail, contactPhone, gstNumber, fcmToken } = req.body;
 
-    const store = await updateStoreProfile(storeId, {
+    const store = await updateStoreProfile(storeId as string, {
       isOpen,
       deliveryRadius,
       latitude,
@@ -116,7 +116,7 @@ router.post('/:storeId/listings', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const listing = await upsertListing(storeId, catalogItemId, {
+    const listing = await upsertListing(storeId as string, catalogItemId, {
       price,
       stockQuantity,
       expiryBucket,

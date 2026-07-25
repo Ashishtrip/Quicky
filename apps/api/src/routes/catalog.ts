@@ -29,7 +29,7 @@ router.get('/categories', async (req, res) => {
 // GET /catalog
 router.get('/', async (req, res) => {
   try {
-    const storeId = req.query.storeId as string | undefined;
+    const storeId = req.query['storeId'] as string | undefined;
 
     const whereClause: any = {
       isActive: true,

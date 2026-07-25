@@ -15,3 +15,4 @@ if (!admin.apps.length) {
 }
 
 export const messaging: admin.messaging.Messaging = admin.messaging();
+export const adminAuth = admin.auth();

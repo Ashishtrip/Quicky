@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { Platform } from 'react-native';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env['EXPO_PUBLIC_API_URL'] || 'http://localhost:3000';
 
 class SocketService {
   private socket: Socket | null = null;

@@ -65,6 +65,7 @@ export const updateStoreProfile = async (
     contactEmail?: string;
     contactPhone?: string;
     gstNumber?: string;
+    fcmToken?: string;
   }
 ) => {
   const updateData: any = {
@@ -79,6 +80,7 @@ export const updateStoreProfile = async (
     contactEmail: data.contactEmail,
     contactPhone: data.contactPhone,
     gstNumber: data.gstNumber,
+    fcmToken: data.fcmToken,
   };
   
   if (data.deliveryRadius !== undefined) {
@@ -110,6 +112,7 @@ export const updateStoreProfile = async (
       contactEmail: updateData.contactEmail,
       contactPhone: updateData.contactPhone,
       gstNumber: updateData.gstNumber,
+      fcmToken: updateData.fcmToken,
     },
     update: updateData
   });
