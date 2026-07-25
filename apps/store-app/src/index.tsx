@@ -8,7 +8,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Platform, ActivityIndicator, View, Pressable, Text, StyleSheet, Image } from 'react-native';
-import { initApiClient } from '@quicky/api-client';
+import { initApiClient, setAuthToken } from '@quicky/api-client';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -258,6 +258,8 @@ const App = () => {
     const subscriber = auth().onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          const token = await firebaseUser.getIdToken();
+          setAuthToken(token);
           const doc = await firestore().collection('users').doc(firebaseUser.uid).get();
           if (mounted) {
             setIsOnboarded(!!doc.data());
@@ -267,15 +269,30 @@ const App = () => {
           if (mounted) setIsOnboarded(false);
         }
       } else {
+        setAuthToken(null);
         if (mounted) setIsOnboarded(false);
       }
       
       if (mounted) setUser(firebaseUser);
     });
+
+    const tokenSubscriber = auth().onIdTokenChanged(async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const token = await firebaseUser.getIdToken();
+          setAuthToken(token);
+        } catch (error) {
+          console.warn('[App] Error getting fresh token:', error);
+        }
+      } else {
+        setAuthToken(null);
+      }
+    });
     
     return () => {
       mounted = false;
       subscriber();
+      tokenSubscriber();
     };
   }, []);
 

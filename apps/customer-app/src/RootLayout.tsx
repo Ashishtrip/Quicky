@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { initApiClient } from '@quicky/api-client';
+import { initApiClient, setAuthToken } from '@quicky/api-client';
 import { useCartStore } from './stores/cartStore';
 import { useAuthStore } from './stores/authStore';
 import { AppNavigator } from './navigation/AppNavigator';
@@ -43,6 +43,12 @@ export default function RootLayout() {
     const subscriber = auth().onAuthStateChanged(async (user) => {
       setUser(user);
       if (user) {
+        try {
+          const token = await user.getIdToken();
+          setAuthToken(token);
+        } catch (e) {
+          console.error('Error getting token:', e);
+        }
         // Always mark as onboarded — profile completion is optional
         setIsOnboarded(true);
         try {
@@ -61,11 +67,29 @@ export default function RootLayout() {
         } catch (e) {
           console.error('Error syncing user doc:', e);
         }
+      } else {
+        setAuthToken(null);
       }
       setLoading(false);
     });
 
-    return subscriber;
+    const tokenSubscriber = auth().onIdTokenChanged(async (user) => {
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          setAuthToken(token);
+        } catch (error) {
+          console.warn('[App] Error getting fresh token:', error);
+        }
+      } else {
+        setAuthToken(null);
+      }
+    });
+
+    return () => {
+      subscriber();
+      tokenSubscriber();
+    };
   }, [setUser, setLoading, setIsOnboarded]);
 
   return (

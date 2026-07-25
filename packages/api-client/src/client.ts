@@ -11,6 +11,11 @@ declare const console: {
 const DEFAULT_BASE_URL = 'https://quicky-production.up.railway.app';
 
 let _client: AxiosInstance | null = null;
+let _authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  _authToken = token;
+};
 
 export interface ApiClientConfig {
   baseUrl?: string;
@@ -29,6 +34,13 @@ export function initApiClient(config: ApiClientConfig = {}): AxiosInstance {
       'Content-Type': 'application/json',
       'Bypass-Tunnel-Reminder': 'true',
     },
+  });
+
+  _client.interceptors.request.use((config) => {
+    if (_authToken && config.headers) {
+      config.headers.Authorization = `Bearer ${_authToken}`;
+    }
+    return config;
   });
 
   // Response interceptor — normalise errors

@@ -1,5 +1,5 @@
 // Client setup
-export { initApiClient, getApiClient } from './client';
+export { initApiClient, getApiClient, setAuthToken } from './client';
 export type { ApiClientConfig } from './client';
 
 // Product API
