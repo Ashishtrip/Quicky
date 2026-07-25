@@ -5,11 +5,13 @@
   },
   "build": {
     "development": {
+      "node": "22.12.0",
       "developmentClient": true,
       "distribution": "internal",
       "autoIncrement": true
     },
     "preview": {
+      "node": "22.12.0",
       "distribution": "internal",
       "autoIncrement": true,
       "env": {
@@ -20,6 +22,7 @@
       }
     },
     "production": {
+      "node": "22.12.0",
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://quicky-production.up.railway.app"

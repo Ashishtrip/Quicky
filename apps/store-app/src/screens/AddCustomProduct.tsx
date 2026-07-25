@@ -3,13 +3,12 @@ import { View, Text, StyleSheet, TextInput, Pressable, Image, Alert, ScrollView,
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../index';
-import { uploadProductImage, saveCustomProduct } from '../services/firebaseProducts';
-import firestore from '@react-native-firebase/firestore';
+import { uploadProductImage } from '../services/firebaseProducts';
 import { useAuthStore } from '../stores/authStore';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQueryClient } from '@tanstack/react-query';
+import { useTagging } from '../hooks/useTagging';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddCustomProduct'>;
 
@@ -46,7 +45,7 @@ export const AddCustomProductScreen = ({ navigation }: { navigation: NavigationP
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+  const { mutateAsync } = useTagging();
 
   const incrementQuantity = () => {
     const val = parseInt(quantity) || 0;
@@ -142,21 +141,18 @@ export const AddCustomProductScreen = ({ navigation }: { navigation: NavigationP
       
       const downloadUrl = await uploadProductImage(storeId, imageBase64);
       
-      await saveCustomProduct({
-        name: name.trim(),
-        quantity: quantity.trim(),
-        unit,
-        category,
-        freshness,
-        price: price.trim(),
-        imageUri: downloadUrl,
-        storeId,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-      });
+      const customItemId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       
-      queryClient.invalidateQueries({ queryKey: ['listings'] });
-      queryClient.invalidateQueries({ queryKey: ['listings', storeId] });
-      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+      await mutateAsync({
+        catalogItemId: `custom_${customItemId}`,
+        price: Number(price.trim()),
+        stockQuantity: Number(quantity.trim()),
+        expiryBucket: freshness === 'fresh' ? 'FRESH_STOCK' : 'USE_TODAY',
+        isCustom: true,
+        name: name.trim(),
+        unit,
+        imageUrl: downloadUrl,
+      });
       
       Alert.alert('Success', 'Product added successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() }

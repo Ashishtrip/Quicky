@@ -2,6 +2,7 @@
   "name": "@quicky/ui-kit",
   "version": "0.0.0",
   "private": true,
+  "react-native": "src/index.ts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
