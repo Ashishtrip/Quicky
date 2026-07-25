@@ -111,7 +111,7 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env['PORT'] || 3000;
 
-// Bind to 0.0.0.0 for cloud deployments (Railway, Render, etc.)
-httpServer.listen(Number(PORT), '0.0.0.0', () => {
+// Bind to localhost by default to prevent EPERM in local/sandbox environments
+httpServer.listen(Number(PORT), () => {
   console.log(`Server running on port ${PORT}`);
 });

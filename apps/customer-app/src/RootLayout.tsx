@@ -9,18 +9,12 @@ import { View, ActivityIndicator, Text, Platform } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
-const envApiUrl = process.env['EXPO_PUBLIC_API_URL'];
+const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
 let API_BASE_URL = envApiUrl || 'https://quicky-production.up.railway.app';
 if (API_BASE_URL && !API_BASE_URL.startsWith('http')) {
   API_BASE_URL = `https://${API_BASE_URL}`;
 }
 API_BASE_URL = API_BASE_URL.replace(/\/$/, '');
-if (!__DEV__ && (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('10.0.2.2'))) {
-  API_BASE_URL = 'https://quicky-production.up.railway.app';
-}
-if (!__DEV__ && API_BASE_URL.startsWith('http://') && !API_BASE_URL.includes('localhost') && !API_BASE_URL.includes('10.0.2.2')) {
-  API_BASE_URL = API_BASE_URL.replace('http://', 'https://');
-}
 
 initApiClient({ baseUrl: API_BASE_URL });
 
