@@ -120,7 +120,7 @@ export function OrderStatusScreen() {
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
         timeoutRefs.current.forEach(clearTimeout);
       },
-      onError: (err) => {
+      onError: (err: any) => {
         Alert.alert('Cancel Failed', 'Could not cancel the order at this time.');
       }
     });
@@ -270,10 +270,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   cancelContainer: {
-    marginTop: Spacing.2xl,
+    marginTop: Spacing['2xl'],
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
-    borderRadius: Radii.full,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.error,
   },
   cancelText: {
