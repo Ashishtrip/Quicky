@@ -24,7 +24,7 @@ COPY turbo.json turbo.json
 ENV NODE_OPTIONS="--max-old-space-size=256"
 RUN yarn workspace @quicky/shared-types build
 RUN yarn workspace @quicky/api run db:generate
-RUN cd apps/api && npx -y tsup src/index.ts --format cjs --target node22 --out-dir dist
+RUN cd apps/api && npx -y -p tsup -p typescript tsup src/index.ts --format cjs --target node22 --out-dir dist
 
 FROM node:22-alpine AS runner
 RUN apk add --no-cache openssl
