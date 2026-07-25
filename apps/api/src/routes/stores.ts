@@ -1,15 +1,19 @@
 import { Router } from 'express';
-import { getStoreListings, upsertListing } from '../services/listingService';
+import { getStoreListings, upsertListing, deleteListing } from '../services/listingService';
 import { getSalesMetrics, getWeeklyOrderVolume } from '../services/salesService';
 import { getNearbyStores, updateStoreProfile } from '../services/storeService';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
 // PATCH /stores/:storeId
-router.patch('/:storeId', async (req, res) => {
+router.patch('/:storeId', authenticateToken, async (req, res) => {
   try {
     const { storeId } = req.params;
-    const { isOpen, deliveryRadius, latitude, longitude, name, address, phone, ownerName, ownerPhone, contactEmail, contactPhone, gstNumber } = req.body;
+    if (req.user.uid !== storeId) {
+      return res.status(403).json({ error: 'Forbidden: Cannot modify another store' });
+    }
+    const { isOpen, deliveryRadius, latitude, longitude, name, address, phone, ownerName, ownerPhone, contactEmail, contactPhone, gstNumber, fcmToken } = req.body;
 
     const store = await updateStoreProfile(storeId, {
       isOpen,
@@ -23,7 +27,8 @@ router.patch('/:storeId', async (req, res) => {
       ownerPhone,
       contactEmail,
       contactPhone,
-      gstNumber
+      gstNumber,
+      fcmToken
     });
 
     res.json(store);
@@ -99,9 +104,12 @@ router.get('/:storeId/listings', async (req, res) => {
 });
 
 // POST /stores/:storeId/listings
-router.post('/:storeId/listings', async (req, res) => {
+router.post('/:storeId/listings', authenticateToken, async (req, res) => {
   try {
     const { storeId } = req.params;
+    if (req.user.uid !== storeId) {
+      return res.status(403).json({ error: 'Forbidden: Cannot modify another store' });
+    }
     const { catalogItemId, price, stockQuantity, expiryBucket, isCustom, name, unit, imageUrl } = req.body;
 
     if (!catalogItemId || stockQuantity === undefined || !expiryBucket) {
@@ -125,12 +133,13 @@ router.post('/:storeId/listings', async (req, res) => {
   }
 });
 
-import { deleteListing } from '../services/listingService';
-
 // DELETE /stores/:storeId/listings/:listingId
-router.delete('/:storeId/listings/:listingId', async (req, res) => {
+router.delete('/:storeId/listings/:listingId', authenticateToken, async (req, res) => {
   try {
     const { storeId, listingId } = req.params;
+    if (req.user.uid !== storeId) {
+      return res.status(403).json({ error: 'Forbidden: Cannot modify another store' });
+    }
     if (!storeId || !listingId) {
        return res.status(400).json({ error: 'Missing required fields' });
     }

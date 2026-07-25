@@ -7,11 +7,13 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTickets, useTicketActions, OrderTicket } from '@quicky/api-client';
 import { useAuthStore } from '../stores/authStore';
 import { TicketCard } from '../components/TicketCard';
+import { getCurrentPositionAsync, Accuracy } from 'expo-location';
 import { useQueryClient } from '@tanstack/react-query';
 import { storeSocket } from '../services/socket';
 import { useNotificationStore } from '../stores/notificationStore';
@@ -47,12 +49,30 @@ export const InboxScreen = () => {
 
   React.useEffect(() => {
     storeSocket.connect(STORE_ID);
-    const unsubscribe = storeSocket.subscribe('new-order-assignment', () => {
+    const unsubscribeNew = storeSocket.subscribe('new-order-assignment', () => {
       queryClient.invalidateQueries({ queryKey: ['tickets', STORE_ID] });
     });
 
+    const unsubscribeCancel = storeSocket.subscribe('ticket-cancelled', () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets', STORE_ID] });
+    });
+
+    const updateLocation = async () => {
+      try {
+        const location = await getCurrentPositionAsync({ accuracy: Accuracy.Balanced });
+        if (location) {
+          storeSocket.emitLocation(STORE_ID, location.coords.latitude, location.coords.longitude);
+        }
+      } catch (err) {
+        console.warn('Could not update location for socket emit:', err);
+      }
+    };
+    
+    updateLocation();
+    
     return () => {
-      unsubscribe();
+      unsubscribeNew();
+      unsubscribeCancel();
       storeSocket.disconnect();
     };
   }, [STORE_ID, queryClient]);
@@ -113,66 +133,77 @@ export const InboxScreen = () => {
 
   const renderContent = () => {
     if (activeTab === 'NEW') {
-      if (pendingTickets.length === 0) {
-        return (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📬</Text>
-            <Text style={styles.emptyText}>No new orders right now.</Text>
-          </View>
-        );
-      }
-      return pendingTickets.map((ticket: OrderTicket) => (
-        <TicketCard
-          key={ticket.id}
-          ticket={ticket}
-          isPending={true}
-          onAccept={handleAccept}
-          onDecline={handleDecline}
-          isAccepting={accept.isPending && accept.variables === ticket.id}
-          isDeclining={decline.isPending && decline.variables === ticket.id}
+      return (
+        <FlatList
+          data={pendingTickets}
+          keyExtractor={(ticket: OrderTicket) => ticket.id}
+          contentContainerStyle={styles.scrollContent}
+          renderItem={({ item: ticket }) => (
+            <TicketCard
+              ticket={ticket}
+              isPending={true}
+              onAccept={handleAccept}
+              onDecline={handleDecline}
+              isAccepting={accept.isPending && accept.variables === ticket.id}
+              isDeclining={decline.isPending && decline.variables === ticket.id}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📬</Text>
+              <Text style={styles.emptyText}>No new orders right now.</Text>
+            </View>
+          }
         />
-      ));
+      );
     }
 
     if (activeTab === 'PACKING') {
-      if (activeTickets.length === 0) {
-        return (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={styles.emptyText}>No orders currently being packed.</Text>
-          </View>
-        );
-      }
-      return activeTickets.map((ticket: OrderTicket) => (
-        <TicketCard
-          key={ticket.id}
-          ticket={ticket}
-          isPending={false}
-          onPack={handlePack}
-          isPacking={pack.isPending && pack.variables === ticket.id}
+      return (
+        <FlatList
+          data={activeTickets}
+          keyExtractor={(ticket: OrderTicket) => ticket.id}
+          contentContainerStyle={styles.scrollContent}
+          renderItem={({ item: ticket }) => (
+            <TicketCard
+              ticket={ticket}
+              isPending={false}
+              onPack={handlePack}
+              isPacking={pack.isPending && pack.variables === ticket.id}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📦</Text>
+              <Text style={styles.emptyText}>No orders currently being packed.</Text>
+            </View>
+          }
         />
-      ));
+      );
     }
 
     if (activeTab === 'READY') {
-      if (readyTickets.length === 0) {
-        return (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>✅</Text>
-            <Text style={styles.emptyText}>No orders waiting for riders.</Text>
-          </View>
-        );
-      }
-      return readyTickets.map((ticket: OrderTicket) => (
-        <TicketCard
-          key={ticket.id}
-          ticket={ticket}
-          isPending={false}
+      return (
+        <FlatList
+          data={readyTickets}
+          keyExtractor={(ticket: OrderTicket) => ticket.id}
+          contentContainerStyle={styles.scrollContent}
+          renderItem={({ item: ticket }) => (
+            <TicketCard
+              ticket={ticket}
+              isPending={false}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>✅</Text>
+              <Text style={styles.emptyText}>No orders waiting for riders.</Text>
+            </View>
+          }
         />
-      ));
+      );
     }
   };
-
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -239,9 +270,7 @@ export const InboxScreen = () => {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {renderContent()}
-      </ScrollView>
+      {renderContent()}
     </SafeAreaView>
   );
 };

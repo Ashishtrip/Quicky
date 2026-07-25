@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Image, Dimensions, TextInput, Scroll
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/authStore';
 import firestore from '@react-native-firebase/firestore';
+import messaging from '@react-native-firebase/messaging';
 import { updateStoreProfile } from '@quicky/api-client';
 import { requestForegroundPermissionsAsync, getCurrentPositionAsync, Accuracy } from 'expo-location';
 // @ts-ignore
@@ -115,6 +116,20 @@ export const OnboardingScreen = () => {
     setIsSubmitting(true);
     if (user) {
       try {
+        let fcmToken = '';
+        try {
+          const authStatus = await messaging().requestPermission();
+          const enabled =
+            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+          
+          if (enabled) {
+            fcmToken = await messaging().getToken();
+          }
+        } catch (messagingErr) {
+          console.warn('Could not request messaging token', messagingErr);
+        }
+
         // Create in backend
         await updateStoreProfile(user.uid, {
           name: storeName,
@@ -128,6 +143,7 @@ export const OnboardingScreen = () => {
           gstNumber,
           isOpen: false,
           deliveryRadius: 2500, // 2.5km default
+          fcmToken: fcmToken || undefined,
         });
 
         // Create in Firestore

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, Radii, AddressCard, Button, TextInput } from '@quicky/ui-kit';
 import { Feather } from '@expo/vector-icons';
@@ -105,38 +105,43 @@ export const ManageAddressesScreen = () => {
         <Text style={styles.headerTitle}>Saved Addresses</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <Button 
-          title={isLocating ? "Locating..." : "Use Current Location"} 
-          variant="secondary" 
-          icon={<Feather name="navigation" size={18} color={Colors.primary} style={{ marginRight: Spacing.sm }} />}
-          style={styles.locationButton}
-          onPress={handleUseCurrentLocation}
-          disabled={isLocating}
-        />
-
-        <Text style={styles.sectionTitle}>Saved Addresses</Text>
-
-        {isLoading ? (
-          <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.xl }} />
-        ) : (addresses && addresses.length > 0) ? (
-          addresses.map((address: Address) => (
+      {isLoading ? (
+        <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.xl }} />
+      ) : (
+        <FlatList
+          data={addresses}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.container}
+          ListHeaderComponent={
+            <>
+              <Button 
+                title={isLocating ? "Locating..." : "Use Current Location"} 
+                variant="secondary" 
+                icon={<Feather name="navigation" size={18} color={Colors.primary} style={{ marginRight: Spacing.sm }} />}
+                style={styles.locationButton}
+                onPress={handleUseCurrentLocation}
+                disabled={isLocating}
+              />
+              <Text style={styles.sectionTitle}>Saved Addresses</Text>
+            </>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Feather name="map" size={48} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>No saved addresses yet</Text>
+            </View>
+          }
+          renderItem={({ item: address }) => (
             <AddressCard
-              key={address.id}
               label={address.label}
               addressText={`${address.street}, ${address.city}, ${address.state} ${address.pincode}`}
               isDefault={address.isDefault}
               onDelete={() => handleDelete(address.id)}
               onSelect={() => {}}
             />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Feather name="map" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No saved addresses yet</Text>
-          </View>
-        )}
-      </ScrollView>
+          )}
+        />
+      )}
 
       <View style={styles.footer}>
         <Button 

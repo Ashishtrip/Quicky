@@ -29,13 +29,26 @@ router.get('/categories', async (req, res) => {
 // GET /catalog
 router.get('/', async (req, res) => {
   try {
+    const storeId = req.query.storeId as string | undefined;
+
+    const whereClause: any = {
+      isActive: true,
+    };
+
+    if (storeId) {
+      whereClause.OR = [
+        { storeId: null },
+        { storeId: storeId }
+      ];
+    } else {
+      whereClause.storeId = null;
+    }
+
     const catalogItems = await prisma.catalogItem.findMany({
       include: {
         category: true,
       },
-      where: {
-        isActive: true,
-      }
+      where: whereClause
     });
     res.json(catalogItems);
   } catch (error) {

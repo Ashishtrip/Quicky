@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { Platform } from 'react-native';
 
-const API_BASE_URL = 'https://quicky-production.up.railway.app';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -27,6 +27,17 @@ class SocketService {
       console.log('[Store WS] Received new order assignment:', payload);
       this.notifyListeners('new-order-assignment', payload);
     });
+
+    this.socket.on('ticket-cancelled', (payload: any) => {
+      console.log('[Store WS] Received ticket-cancelled:', payload);
+      this.notifyListeners('ticket-cancelled', payload);
+    });
+  }
+
+  emitLocation(storeId: string, latitude: number, longitude: number) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('location_update', { storeId, latitude, longitude });
+    }
   }
 
   disconnect() {

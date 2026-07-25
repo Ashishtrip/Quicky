@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  ScrollView,
+  SectionList,
   StyleSheet,
   Pressable,
   Alert,
@@ -158,70 +158,35 @@ export function CartScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
+      <SectionList
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Use Today Section */}
-        {useTodayItems.length > 0 && (
-          <>
-            <CartSectionHeader
-              type="USE_TODAY"
-              itemCount={useTodayItems.length}
-            />
-            {useTodayItems.map((item) => (
-              <CartItemCard
-                key={item.id}
-                productName={item.productName}
-                unit={item.unit}
-                price={item.price}
-                discountedPrice={item.discountedPrice}
-                discountPct={item.discountPct}
-                freshnessMeter={item.freshnessMeter}
-                quantity={item.quantity}
-                onIncrement={() =>
-                  updateQuantity(item.id, item.quantity + 1)
-                }
-                onDecrement={() =>
-                  updateQuantity(item.id, item.quantity - 1)
-                }
-                onRemove={() => removeItem(item.id)}
-              />
-            ))}
-          </>
+        sections={[
+          ...(useTodayItems.length > 0 ? [{ title: 'USE_TODAY' as const, data: useTodayItems }] : []),
+          ...(freshStockItems.length > 0 ? [{ title: 'FRESH_STOCK' as const, data: freshStockItems }] : []),
+        ]}
+        keyExtractor={(item) => item.id}
+        renderSectionHeader={({ section }) => (
+          <CartSectionHeader type={section.title} itemCount={section.data.length} />
         )}
-
-        {/* Fresh Stock Section */}
-        {freshStockItems.length > 0 && (
-          <>
-            <CartSectionHeader
-              type="FRESH_STOCK"
-              itemCount={freshStockItems.length}
-            />
-            {freshStockItems.map((item) => (
-              <CartItemCard
-                key={item.id}
-                productName={item.productName}
-                unit={item.unit}
-                price={item.price}
-                discountedPrice={item.discountedPrice}
-                discountPct={item.discountPct}
-                freshnessMeter={item.freshnessMeter}
-                quantity={item.quantity}
-                onIncrement={() =>
-                  updateQuantity(item.id, item.quantity + 1)
-                }
-                onDecrement={() =>
-                  updateQuantity(item.id, item.quantity - 1)
-                }
-                onRemove={() => removeItem(item.id)}
-              />
-            ))}
-          </>
+        renderItem={({ item }) => (
+          <CartItemCard
+            productName={item.productName}
+            unit={item.unit}
+            price={item.price}
+            discountedPrice={item.discountedPrice}
+            discountPct={item.discountPct}
+            freshnessMeter={item.freshnessMeter}
+            quantity={item.quantity}
+            onIncrement={() => updateQuantity(item.id, item.quantity + 1)}
+            onDecrement={() => updateQuantity(item.id, item.quantity - 1)}
+            onRemove={() => removeItem(item.id)}
+          />
         )}
-
-        {/* Order Summary — Stitch Bill Details */}
+        ListFooterComponent={
+          <>
+            {/* Order Summary — Stitch Bill Details */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Bill Details</Text>
 
@@ -377,7 +342,9 @@ export function CartScreen() {
             </Pressable>
           )}
         </View>
-      </ScrollView>
+          </>
+        }
+      />
 
       {/* Checkout CTA — Fixed Bottom Actions */}
       <View style={styles.checkoutBar}>

@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '@quicky/ui-kit';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { userSocket } from '../services/socket';
-import { OrderResult, useSubmitRating } from '@quicky/api-client';
+import { OrderResult, useSubmitRating, useCancelOrder } from '@quicky/api-client';
 import { useAuthStore } from '../stores/authStore';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -20,12 +20,15 @@ export function OrderStatusScreen() {
   const { orderId } = route.params;
   const { user } = useAuthStore();
 
-  const [status, setStatus] = useState<'FINDING_STORE' | 'ACCEPTED' | 'PACKED'>('FINDING_STORE');
+  const [status, setStatus] = useState<'FINDING_STORE' | 'ACCEPTED' | 'PACKED' | 'CANCELLED'>('FINDING_STORE');
   const [orderData, setOrderData] = useState<OrderResult | null>(null);
   const [customerLocation, setCustomerLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [cancelCountdown, setCancelCountdown] = useState(10);
 
   const submitRatingMutation = useSubmitRating();
+  const cancelOrderMutation = useCancelOrder();
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -41,8 +44,8 @@ export function OrderStatusScreen() {
     })();
 
     return () => {
-
       timeoutRefs.current.forEach(clearTimeout);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
   }, []);
 
@@ -54,6 +57,18 @@ export function OrderStatusScreen() {
         setStatus('ACCEPTED');
         setOrderData(payload);
         
+        // Start 10-second countdown for cancel
+        setCancelCountdown(10);
+        countdownIntervalRef.current = setInterval(() => {
+          setCancelCountdown(prev => {
+            if (prev <= 1) {
+              if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
         // Simulate delivery and ask for rating
         const deliveryTimeout = setTimeout(() => {
           Alert.alert(
@@ -66,13 +81,22 @@ export function OrderStatusScreen() {
             ],
             { cancelable: false }
           );
-        }, 8000); // Wait 8 seconds before fake delivery
+        }, 8000 + 10000); // 10s wait for cancel window + 8s delivery simulation
         timeoutRefs.current.push(deliveryTimeout);
+      }
+    });
+
+    const unsubscribeCancelled = userSocket.subscribe('order-cancelled', (payload: any) => {
+      if (payload.orderId === orderId) {
+        setStatus('CANCELLED');
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        timeoutRefs.current.forEach(clearTimeout);
       }
     });
 
     return () => {
       unsubscribeAccepted();
+      unsubscribeCancelled();
       userSocket.disconnect();
     };
   }, [orderId, navigation, submitRatingMutation]);
@@ -87,6 +111,20 @@ export function OrderStatusScreen() {
 
   const isFindingStore = status === 'FINDING_STORE';
   const isAccepted = status === 'ACCEPTED';
+  const isCancelled = status === 'CANCELLED';
+
+  const handleCancel = () => {
+    cancelOrderMutation.mutate(orderId, {
+      onSuccess: () => {
+        setStatus('CANCELLED');
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        timeoutRefs.current.forEach(clearTimeout);
+      },
+      onError: (err) => {
+        Alert.alert('Cancel Failed', 'Could not cancel the order at this time.');
+      }
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -98,6 +136,10 @@ export function OrderStatusScreen() {
             <Text style={styles.subtitle}>
               Broadcasting your order to nearby kirana stores with matching inventory.
             </Text>
+            
+            <View style={styles.cancelContainer}>
+              <Text style={styles.cancelText} onPress={handleCancel}>Cancel Order</Text>
+            </View>
           </View>
         ) : null}
 
@@ -113,6 +155,12 @@ export function OrderStatusScreen() {
               <Text style={styles.etaLabel}>Estimated Arrival</Text>
               <Text style={styles.etaValue}>{etaDisplay}</Text>
             </View>
+
+            {cancelCountdown > 0 && (
+              <View style={styles.cancelContainer}>
+                <Text style={styles.cancelText} onPress={handleCancel}>Cancel Order ({cancelCountdown}s)</Text>
+              </View>
+            )}
 
             {orderData?.assignedStore?.latitude && customerLocation && (
               <View style={styles.mapContainer}>
@@ -141,6 +189,19 @@ export function OrderStatusScreen() {
                 </MapView>
               </View>
             )}
+          </View>
+        ) : null}
+
+        {isCancelled ? (
+          <View style={styles.centerState}>
+            <Text style={styles.emoji}>❌</Text>
+            <Text style={styles.title}>Order Cancelled</Text>
+            <Text style={styles.subtitle}>
+              Your order has been cancelled successfully.
+            </Text>
+            <View style={styles.cancelContainer}>
+              <Text style={styles.cancelText} onPress={() => navigation.navigate('MainTabs')}>Go Home</Text>
+            </View>
           </View>
         ) : null}
       </View>
@@ -208,4 +269,16 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
+  cancelContainer: {
+    marginTop: Spacing.2xl,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.error,
+  },
+  cancelText: {
+    ...Typography.bodyLarge,
+    color: Colors.white,
+    fontWeight: 'bold',
+  }
 });

@@ -120,6 +120,11 @@ export async function acceptTicket(storeId: string, ticketId: string) {
     if (updateResult.count === 0) {
       // Check if it was accepted by us in a concurrent request
       const currentOrder = await tx.order.findUnique({ where: { id: order.id } });
+      
+      if (currentOrder?.status === "CANCELLED") {
+        throw new Error("Order was cancelled by the customer.");
+      }
+      
       if (currentOrder?.assignedStoreId === storeId) {
         // We already own this order, so we can proceed or just return it
         const finalOrder = await tx.order.findUnique({

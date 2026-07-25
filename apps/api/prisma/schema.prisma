@@ -55,6 +55,8 @@ model CatalogItem {
   referenceMrp Float?
   barcode      String?
   tags         String[]
+  storeId      String?
+  store        Store?   @relation(fields: [storeId], references: [id])
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -93,9 +95,10 @@ model Store {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  listings Listing[]
-  orders   Order[]
-  tickets  OrderTicket[]
+  catalogItems          CatalogItem[]
+  listings              Listing[]
+  orders                Order[]
+  tickets               OrderTicket[]
   reviews  Review[]
 }
 

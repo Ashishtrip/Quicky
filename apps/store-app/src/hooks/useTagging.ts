@@ -16,6 +16,7 @@ if (!__DEV__ && API_URL.startsWith('http://') && !API_URL.includes('localhost') 
   API_URL = API_URL.replace('http://', 'https://');
 }
 import { useAuthStore } from '../stores/authStore';
+import auth from '@react-native-firebase/auth';
 
 /**
  * Fetch the master catalog from the Express API.
@@ -25,7 +26,12 @@ export const useCatalog = () => {
   return useQuery({
     queryKey: ['catalog'],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/catalog`);
+      const token = await auth().currentUser?.getIdToken();
+      const res = await fetch(`${API_URL}/catalog`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
       if (!res.ok) throw new Error('Failed to fetch catalog');
       return await res.json();
     },
@@ -44,7 +50,12 @@ export const useStoreListings = () => {
   return useQuery({
     queryKey: ['listings', STORE_ID],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/stores/${STORE_ID}/listings`);
+      const token = await auth().currentUser?.getIdToken();
+      const res = await fetch(`${API_URL}/stores/${STORE_ID}/listings`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
       if (!res.ok) throw new Error('Failed to fetch listings');
       return await res.json();
     },
@@ -63,10 +74,12 @@ export const useTagging = () => {
 
   return useMutation({
     mutationFn: async (data: { catalogItemId: string, price?: number, stockQuantity: number, expiryBucket: string, isCustom?: boolean, name?: string, unit?: string, imageUrl?: string }) => {
+      const token = await auth().currentUser?.getIdToken();
       const res = await fetch(`${API_URL}/stores/${STORE_ID}/listings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify(data),
       });
@@ -93,8 +106,12 @@ export const useDeleteListing = () => {
 
   return useMutation({
     mutationFn: async (listingId: string) => {
+      const token = await auth().currentUser?.getIdToken();
       const res = await fetch(`${API_URL}/stores/${STORE_ID}/listings/${listingId}`, {
         method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
       if (!res.ok) throw new Error('Failed to delete listing');
       return res.json();

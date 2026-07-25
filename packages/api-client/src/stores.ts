@@ -36,6 +36,7 @@ export interface StoreProfileUpdate {
   contactEmail?: string;
   contactPhone?: string;
   gstNumber?: string;
+  fcmToken?: string;
 }
 
 export const updateStoreProfile = async (storeId: string, updates: StoreProfileUpdate) => {

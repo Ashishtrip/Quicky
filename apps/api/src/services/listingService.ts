@@ -43,7 +43,8 @@ export const upsertListing = async (
         name: data.name,
         unit: data.unit || '1 unit',
         imageUrl: data.imageUrl,
-        referenceMrp: data.price
+        referenceMrp: data.price,
+        storeId: actualStoreId
       },
       create: {
         id: catalogItemId,
@@ -51,7 +52,8 @@ export const upsertListing = async (
         unit: data.unit || '1 unit',
         imageUrl: data.imageUrl,
         referenceMrp: data.price,
-        categoryId: category.id
+        categoryId: category.id,
+        storeId: actualStoreId
       }
     });
   }

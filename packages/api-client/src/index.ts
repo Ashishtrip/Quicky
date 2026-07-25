@@ -22,8 +22,8 @@ export { useWeeklyVolume } from './hooks/useWeeklyVolume';
 // Checkout API
 export { createCheckout } from './checkout';
 export type { CheckoutRequest, CheckoutItem, OrderResult } from './checkout';
-export { fetchCustomerOrders } from './orders';
-export { useCustomerOrders } from './hooks/useOrders';
+export { fetchCustomerOrders, cancelOrder } from './orders';
+export { useCustomerOrders, useCancelOrder } from './hooks/useOrders';
 
 // Tickets API
 export { fetchStoreTickets, acceptTicket, declineTicket } from './tickets';
