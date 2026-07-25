@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc",
-    "start": "prisma db push --accept-data-loss && node dist/index.js",
+    "start": "npx prisma db push --accept-data-loss && node dist/index.js",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -35,7 +35,8 @@
     "pino-pretty": "^10.3.0",
     "razorpay": "^2.9.0",
     "zod": "^3.22.0",
-    "zod-to-json-schema": "^3.22.0"
+    "zod-to-json-schema": "^3.22.0",
+    "prisma": "^5.10.0"
   },
   "devDependencies": {
     "@quicky/eslint-config": "*",
@@ -46,7 +47,6 @@
     "@types/node": "^20.11.0",
     "@types/supertest": "^6.0.0",
     "eslint": "^8.57.0",
-    "prisma": "^5.10.0",
     "socket.io-client": "^4.8.3",
     "supertest": "^6.3.0",
     "tsx": "^4.7.0",
