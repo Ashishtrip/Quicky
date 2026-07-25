@@ -11,6 +11,11 @@ firebase-admin-key.json
 *.log
 android
 ios
+.expo
 **/.expo
-**/android
-**/ios
+apps/customer-app/android
+apps/customer-app/ios
+apps/store-app/android
+apps/store-app/ios
+packages/*/node_modules
+apps/*/node_modules
