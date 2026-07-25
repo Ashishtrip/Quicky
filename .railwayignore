@@ -1,5 +1,4 @@
 node_modules
-**/node_modules
 .git
 .github
 *.md
@@ -13,8 +12,12 @@ android
 ios
 apps/customer-app/android
 apps/customer-app/ios
+apps/customer-app/node_modules
 apps/store-app/android
 apps/store-app/ios
+apps/store-app/node_modules
+apps/api/node_modules
+packages/config/eslint-config/node_modules
+packages/config/typescript-config/node_modules
 .expo
-**/.expo
 .turbo
