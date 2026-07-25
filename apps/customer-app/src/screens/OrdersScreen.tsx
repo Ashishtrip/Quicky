@@ -43,7 +43,11 @@ export function OrdersScreen() {
     return (
       <TouchableOpacity 
         style={styles.card}
-        onPress={() => navigation.navigate('OrderStatus', { orderId: item.id })}
+        onPress={() => navigation.navigate('OrderStatus', { 
+          orderId: item.id,
+          initialStatus: item.status,
+          initialOrderData: item
+        })}
       >
         <View style={styles.cardHeader}>
           <Text style={styles.orderId}>Order #{item.id.slice(0, 8).toUpperCase()}</Text>

@@ -37,7 +37,7 @@ export type RootStackParamList = {
   CompleteProfile: undefined;
   Feedback: undefined;
   About: undefined;
-  OrderStatus: { orderId: string };
+  OrderStatus: { orderId: string; initialStatus?: string; initialOrderData?: any };
   Onboarding: undefined;
   Splash: undefined;
   Login: undefined;

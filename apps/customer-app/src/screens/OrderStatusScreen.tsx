@@ -17,13 +17,13 @@ type OrderStatusRouteProp = RouteProp<RootStackParamList, 'OrderStatus'>;
 export function OrderStatusScreen() {
   const route = useRoute<OrderStatusRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { orderId } = route.params;
+  const { orderId, initialStatus, initialOrderData } = route.params as any;
   const { user } = useAuthStore();
 
-  const [status, setStatus] = useState<'FINDING_STORE' | 'ACCEPTED' | 'PACKED' | 'CANCELLED'>('FINDING_STORE');
-  const [orderData, setOrderData] = useState<OrderResult | null>(null);
+  const [status, setStatus] = useState<string>(initialStatus === 'PENDING' ? 'FINDING_STORE' : (initialStatus || 'FINDING_STORE'));
+  const [orderData, setOrderData] = useState<OrderResult | null>(initialOrderData || null);
   const [customerLocation, setCustomerLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [cancelCountdown, setCancelCountdown] = useState(10);
+  const [cancelCountdown, setCancelCountdown] = useState(0);
 
   const submitRatingMutation = useSubmitRating();
   const cancelOrderMutation = useCancelOrder();
@@ -109,9 +109,10 @@ export function OrderStatusScreen() {
     etaDisplay = `${mins} min${mins > 1 ? 's' : ''}`;
   }
 
-  const isFindingStore = status === 'FINDING_STORE';
-  const isAccepted = status === 'ACCEPTED';
+  const isFindingStore = status === 'FINDING_STORE' || status === 'PENDING';
+  const isAccepted = status === 'ACCEPTED' || status === 'PACKED' || status === 'OUT_FOR_DELIVERY';
   const isCancelled = status === 'CANCELLED';
+  const isDelivered = status === 'FULFILLED' || status === 'DELIVERED';
 
   const handleCancel = () => {
     cancelOrderMutation.mutate(orderId, {
@@ -198,6 +199,19 @@ export function OrderStatusScreen() {
             <Text style={styles.title}>Order Cancelled</Text>
             <Text style={styles.subtitle}>
               Your order has been cancelled successfully.
+            </Text>
+            <View style={styles.cancelContainer}>
+              <Text style={styles.cancelText} onPress={() => navigation.navigate('MainTabs')}>Go Home</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {isDelivered ? (
+          <View style={styles.centerState}>
+            <Text style={styles.emoji}>✅</Text>
+            <Text style={styles.title}>Order Delivered</Text>
+            <Text style={styles.subtitle}>
+              This order was successfully delivered.
             </Text>
             <View style={styles.cancelContainer}>
               <Text style={styles.cancelText} onPress={() => navigation.navigate('MainTabs')}>Go Home</Text>
