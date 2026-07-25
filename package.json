@@ -8,7 +8,7 @@
     "packages/config/eslint-config"
   ],
   "scripts": {
-    "postinstall": "turbo run build --filter=\"./packages/*\"",
+
     "dev:customer": "yarn workspace @quicky/customer-app dev",
     "dev:store": "yarn workspace @quicky/store-app dev",
     "dev:api": "yarn workspace @quicky/api dev",

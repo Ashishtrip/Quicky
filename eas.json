@@ -11,13 +11,13 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "REPLACE_WITH_NGROK_OR_RAILWAY_URL"
+        "EXPO_PUBLIC_API_URL": "https://olive-buckets-worry.loca.lt"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "REPLACE_WITH_RAILWAY_URL"
+        "EXPO_PUBLIC_API_URL": "https://olive-buckets-worry.loca.lt"
       }
     }
   },

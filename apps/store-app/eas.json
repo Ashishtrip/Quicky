@@ -12,6 +12,9 @@
     "preview": {
       "distribution": "internal",
       "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://olive-buckets-worry.loca.lt"
+      },
       "android": {
         "buildType": "apk"
       }
@@ -19,7 +22,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://quicky-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://olive-buckets-worry.loca.lt"
       }
     }
   },
