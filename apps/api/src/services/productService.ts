@@ -53,7 +53,7 @@ export async function getProducts(params: ProductQueryParams): Promise<Aggregate
   const listingWhere: Record<string, unknown> = {
     isActive: true,
     stockQuantity: { gt: 0 },
-    store: { isActive: true },
+    store: { isActive: true, isOpen: true },
     catalogItem: { isActive: true },
   };
 

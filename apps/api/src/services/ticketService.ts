@@ -14,7 +14,14 @@ export async function getTicketsForStore(storeId: string) {
         },
         {
           status: "ACCEPTED",
-          order: { status: { in: ["ACCEPTED", "AWAITING_PAYMENT"] } },
+          order: { status: { in: ["ACCEPTED", "AWAITING_PAYMENT", "PACKED", "READY_FOR_PICKUP"] } },
+        },
+        {
+          status: "ACCEPTED",
+          order: { status: "FULFILLED" },
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
         },
       ],
     },
@@ -26,6 +33,8 @@ export async function getTicketsForStore(storeId: string) {
               catalogItem: true,
             },
           },
+          user: true,
+          delivery: true,
         },
       },
     },
@@ -40,7 +49,7 @@ export async function acceptTicket(storeId: string, ticketId: string) {
     // 1. Fetch the ticket
     const ticket = await tx.orderTicket.findUnique({
       where: { id: ticketId },
-      include: { order: true },
+      include: { order: { include: { payment: true, user: true } } },
     });
 
     if (!ticket) {
@@ -56,7 +65,7 @@ export async function acceptTicket(storeId: string, ticketId: string) {
         // Idempotency: if network retries and it's already accepted by this store
         const finalOrder = await tx.order.findUnique({
           where: { id: ticket.orderId },
-          include: { items: true, assignedStore: true, delivery: true },
+          include: { items: { include: { catalogItem: true } }, assignedStore: true, delivery: true, user: true },
         });
         return finalOrder;
       }
@@ -129,7 +138,7 @@ export async function acceptTicket(storeId: string, ticketId: string) {
         // We already own this order, so we can proceed or just return it
         const finalOrder = await tx.order.findUnique({
           where: { id: order.id },
-          include: { items: true, assignedStore: true, delivery: true },
+          include: { items: { include: { catalogItem: true } }, assignedStore: true, delivery: true, user: true },
         });
         return finalOrder;
       }
@@ -186,7 +195,7 @@ export async function acceptTicket(storeId: string, ticketId: string) {
 
     const finalOrder = await tx.order.findUnique({
       where: { id: order.id },
-      include: { items: true, assignedStore: true, delivery: true },
+      include: { items: { include: { catalogItem: true } }, assignedStore: true, delivery: true, user: true },
     });
 
     // Notify User
@@ -238,13 +247,79 @@ export async function markTicketPacked(storeId: string, ticketId: string) {
   const updatedOrder = await prisma.order.update({
     where: { id: ticket.orderId },
     data: { status: "PACKED" },
-    include: { items: true, assignedStore: true },
+    include: { items: { include: { catalogItem: true } }, assignedStore: true, delivery: true, user: true },
   });
 
   // Notify User
   await redis.publish('user-notifications', JSON.stringify({
     userId: updatedOrder.userId,
     event: 'order-packed',
+    payload: updatedOrder
+  }));
+
+  return updatedOrder;
+}
+
+export async function markTicketReady(storeId: string, ticketId: string) {
+  const ticket = await prisma.orderTicket.findUnique({
+    where: { id: ticketId },
+    include: { order: true },
+  });
+
+  if (!ticket || ticket.storeId !== storeId) {
+    throw new Error("Ticket not found or unauthorized.");
+  }
+
+  if (!ticket.order) {
+    throw new Error("Order not found for this ticket.");
+  }
+
+  if (ticket.order.status !== "PACKED") {
+    throw new Error(`Order cannot be marked as ready from status: ${ticket.order.status}`);
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: ticket.orderId },
+    data: { status: "READY_FOR_PICKUP" },
+    include: { items: { include: { catalogItem: true } }, assignedStore: true, delivery: true, user: true },
+  });
+
+  await redis.publish('user-notifications', JSON.stringify({
+    userId: updatedOrder.userId,
+    event: 'order-ready',
+    payload: updatedOrder
+  }));
+
+  return updatedOrder;
+}
+
+export async function markTicketDelivered(storeId: string, ticketId: string) {
+  const ticket = await prisma.orderTicket.findUnique({
+    where: { id: ticketId },
+    include: { order: true },
+  });
+
+  if (!ticket || ticket.storeId !== storeId) {
+    throw new Error("Ticket not found or unauthorized.");
+  }
+
+  if (!ticket.order) {
+    throw new Error("Order not found for this ticket.");
+  }
+
+  if (ticket.order.status !== "READY_FOR_PICKUP" && ticket.order.status !== "PACKED") {
+    throw new Error(`Order cannot be marked as delivered from status: ${ticket.order.status}`);
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: ticket.orderId },
+    data: { status: "FULFILLED" },
+    include: { items: { include: { catalogItem: true } }, assignedStore: true, delivery: true, user: true },
+  });
+
+  await redis.publish('user-notifications', JSON.stringify({
+    userId: updatedOrder.userId,
+    event: 'order-delivered',
     payload: updatedOrder
   }));
 

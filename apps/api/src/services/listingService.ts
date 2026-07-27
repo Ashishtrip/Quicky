@@ -22,15 +22,41 @@ export const upsertListing = async (
     name?: string;
     unit?: string;
     imageUrl?: string;
+    categoryId?: string;
   }
 ) => {
   let actualStoreId = storeId;
+
+  // Auto-heal missing store (common in local dev when DB is wiped but Firebase Auth persists)
+  const storeExists = await prisma.store.findUnique({ where: { id: actualStoreId } });
+  if (!storeExists) {
+    await prisma.store.create({
+      data: {
+        id: actualStoreId,
+        name: 'Quicky Store (Auto-healed)',
+        address: 'Rohini, New Delhi',
+        latitude: 28.7495,
+        longitude: 77.0565,
+        phone: '9876543210',
+        ownerName: 'Partner',
+        ownerPhone: '9876543210',
+        isActive: true,
+        isOpen: true,
+      }
+    });
+  }
 
   let finalPrice: number = 0;
   let basePrice: number = data.price || 0;
 
   if (data.isCustom && data.name) {
-    let category = await prisma.category.findFirst();
+    let category;
+    if (data.categoryId) {
+      category = await prisma.category.findUnique({ where: { id: data.categoryId } });
+    }
+    if (!category) {
+      category = await prisma.category.findFirst({ where: { name: 'Custom' } });
+    }
     if (!category) {
        category = await prisma.category.create({
           data: { name: 'Custom', useTodayDiscountPct: 25, sortOrder: 999 }

@@ -7,7 +7,13 @@ Quicky is an Android-first e-commerce grocery platform that prioritizes trust ov
 * **Two Apps, One System**: Includes a dedicated Customer app and a Store Partner app.
 * **Freshness Meter**: Items are categorized into transparent freshness states—**Use Today** (discounted), **Soon** (expiring 2-3 days), and **Fresh Stock** (standard price).
 * **3-Tap Tagging Flow**: Allows store partners to quickly categorize and list near-expiry products with minimal friction (designed for < 30 seconds per item).
+* **Auto-Packing Automation**: When a store completes an order's checklist, the system automatically transitions the order to the "Ready" state without manual confirmation.
 * **Localization & Accessibility**: Android-first design optimized for mid-range devices, with full Hindi and English language support built into the UI.
+
+## MVP / Pilot Limitations
+* **Payments**: To ensure a smooth launch, payments are currently strictly limited to **Cash on Delivery (COD)**.
+* **Delivery Radius**: A strict 3km maximum delivery radius is enforced by the backend to guarantee freshness and rapid delivery.
+* **Maps API**: Live maps are temporarily disabled and replaced by elegant placeholder tracking UIs to prevent API key-related crashes on customer devices.
 
 ## 1. Project Structure
 

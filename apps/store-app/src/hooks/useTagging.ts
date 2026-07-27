@@ -73,7 +73,7 @@ export const useTagging = () => {
   const STORE_ID = user!.uid;
 
   return useMutation({
-    mutationFn: async (data: { catalogItemId: string, price?: number, stockQuantity: number, expiryBucket: string, isCustom?: boolean, name?: string, unit?: string, imageUrl?: string }) => {
+    mutationFn: async (data: { catalogItemId: string, price?: number, stockQuantity: number, expiryBucket: string, isCustom?: boolean, name?: string, unit?: string, imageUrl?: string, categoryId?: string }) => {
       const token = await auth().currentUser?.getIdToken();
       const res = await fetch(`${API_URL}/stores/${STORE_ID}/listings`, {
         method: 'POST',

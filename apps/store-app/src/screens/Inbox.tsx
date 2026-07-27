@@ -10,7 +10,7 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTickets, useTicketActions, OrderTicket } from '@quicky/api-client';
+import { useTickets, useTicketActions, OrderTicket, useSalesMetrics } from '@quicky/api-client';
 import { useAuthStore } from '../stores/authStore';
 import { TicketCard } from '../components/TicketCard';
 import { getCurrentPositionAsync, Accuracy } from 'expo-location';
@@ -33,17 +33,28 @@ const COLORS = {
   surfaceVariant: '#dfe3e3',
 };
 
-type TabKey = 'NEW' | 'PACKING' | 'READY';
+type TabKey = 'NEW' | 'PACKING' | 'READY' | 'COMPLETED';
 
 export const InboxScreen = () => {
   const user = useAuthStore(state => state.user);
   const STORE_ID = user!.uid;
   
   const { data: tickets, isLoading, error } = useTickets(STORE_ID);
-  const { accept, decline, pack } = useTicketActions(STORE_ID);
+  const { accept, decline, pack, ready, deliver } = useTicketActions(STORE_ID);
   const queryClient = useQueryClient();
   const navigation = useNavigation<any>();
   const unreadCount = useNotificationStore(state => state.notifications.filter(n => !n.read).length);
+
+  const todayStart = new Date();
+  todayStart.setHours(0,0,0,0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23,59,59,999);
+
+  const { data: metrics } = useSalesMetrics(
+    STORE_ID,
+    todayStart.toISOString(),
+    todayEnd.toISOString()
+  );
 
   const [activeTab, setActiveTab] = useState<TabKey>('NEW');
 
@@ -59,7 +70,7 @@ export const InboxScreen = () => {
 
     const updateLocation = async () => {
       try {
-        const location = await getCurrentPositionAsync({ accuracy: Accuracy.Balanced });
+        const location = await getCurrentPositionAsync({ accuracy: Accuracy.Lowest });
         if (location) {
           storeSocket.emitLocation(STORE_ID, location.coords.latitude, location.coords.longitude);
         }
@@ -78,9 +89,9 @@ export const InboxScreen = () => {
   }, [STORE_ID, queryClient]);
 
   const pendingTickets = tickets?.filter((t: OrderTicket) => t.status === 'BROADCASTED') || [];
-  const activeTickets = tickets?.filter((t: OrderTicket) => t.status === 'ACCEPTED') || [];
-  // Dummy ready tickets since we don't have a status for it in standard flow right now
-  const readyTickets = tickets?.filter((t: OrderTicket) => (t.status as string) === 'PACKED') || [];
+  const activeTickets = tickets?.filter((t: OrderTicket) => t.status === 'ACCEPTED' && t.order.status === 'ACCEPTED') || [];
+  const readyTickets = tickets?.filter((t: OrderTicket) => t.status === 'ACCEPTED' && (t.order.status === 'PACKED' || t.order.status === 'READY_FOR_PICKUP')) || [];
+  const completedTickets = tickets?.filter((t: OrderTicket) => t.status === 'ACCEPTED' && t.order.status === 'FULFILLED') || [];
 
   const handleAccept = (ticketId: string) => {
     accept.mutate(ticketId, {
@@ -106,6 +117,29 @@ export const InboxScreen = () => {
       },
       onError: (err: Error) => {
         Alert.alert('Error', err.message || 'Could not mark order as packed.');
+      }
+    });
+  };
+
+  const handleReady = (ticketId: string) => {
+    ready.mutate(ticketId, {
+      onSuccess: () => {
+        Alert.alert('Ready', 'Order is ready for pickup.');
+      },
+      onError: (err: Error) => {
+        Alert.alert('Error', err.message || 'Could not mark order as ready.');
+      }
+    });
+  };
+
+  const handleDeliver = (ticketId: string) => {
+    deliver.mutate(ticketId, {
+      onSuccess: () => {
+        Alert.alert('Handed Over', 'Order has been handed to the customer.');
+        setActiveTab('COMPLETED');
+      },
+      onError: (err: Error) => {
+        Alert.alert('Error', err.message || 'Could not mark order as delivered.');
       }
     });
   };
@@ -192,12 +226,68 @@ export const InboxScreen = () => {
             <TicketCard
               ticket={ticket}
               isPending={false}
+              onReady={handleReady}
+              onDeliver={handleDeliver}
+              isReadying={ready.isPending && ready.variables === ticket.id}
+              isDelivering={deliver.isPending && deliver.variables === ticket.id}
             />
           )}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>✅</Text>
               <Text style={styles.emptyText}>No orders waiting for riders.</Text>
+            </View>
+          }
+        />
+      );
+    }
+
+    if (activeTab === 'COMPLETED') {
+      return (
+        <FlatList
+          data={completedTickets}
+          keyExtractor={(ticket: OrderTicket) => ticket.id}
+          contentContainerStyle={styles.scrollContent}
+          ListHeaderComponent={
+            <View style={{ marginBottom: 24 }}>
+              <View style={styles.snapshotGrid}>
+                <Pressable 
+                  style={({pressed}) => [styles.snapshotCard, pressed && {opacity: 0.8}]}
+                  onPress={() => navigation.navigate('SalesSummary' as never)}
+                >
+                  <Text style={styles.snapshotLabel}>REVENUE TODAY</Text>
+                  <View style={styles.snapshotValueRow}>
+                    <Text style={styles.snapshotValue}>₹{metrics?.todayEarnings?.toFixed(2) || '0.00'}</Text>
+                  </View>
+                </Pressable>
+                <Pressable 
+                  style={({pressed}) => [styles.snapshotCard, pressed && {opacity: 0.8}]}
+                  onPress={() => navigation.navigate('SalesSummary' as never)}
+                >
+                  <Text style={styles.snapshotLabel}>ORDERS FULFILLED</Text>
+                  <View style={styles.snapshotValueRow}>
+                    <Text style={styles.snapshotValue}>{metrics?.fulfilledOrders || 0}</Text>
+                    <MaterialIcons name="check-circle" size={18} color={COLORS.secondary} />
+                  </View>
+                </Pressable>
+              </View>
+              
+              <View style={styles.recentCompletionsHeader}>
+                <Text style={styles.recentCompletionsTitle}>Recent Completions</Text>
+              </View>
+            </View>
+          }
+          renderItem={({ item: ticket }) => (
+            <TicketCard
+              ticket={ticket}
+              isPending={false}
+              isCompleted={true}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🎉</Text>
+              <Text style={styles.emptyText}>No completed orders today.</Text>
             </View>
           }
         />
@@ -266,6 +356,13 @@ export const InboxScreen = () => {
                 {readyTickets.length}
               </Text>
             </View>
+          </Pressable>
+
+          <Pressable 
+            style={[styles.segmentTab, activeTab === 'COMPLETED' && styles.segmentTabActive]}
+            onPress={() => setActiveTab('COMPLETED')}
+          >
+            <Text style={[styles.segmentText, activeTab === 'COMPLETED' && styles.segmentTextActive]}>Done</Text>
           </Pressable>
         </View>
       </View>
@@ -389,6 +486,54 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 80, // Space for bottom nav
+  },
+  snapshotGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  snapshotCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#eaefee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    gap: 8,
+  },
+  snapshotLabel: {
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontWeight: '600',
+  },
+  snapshotValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  snapshotValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  recentCompletionsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  recentCompletionsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.onSurface,
   },
   emptyState: {
     alignItems: 'center',

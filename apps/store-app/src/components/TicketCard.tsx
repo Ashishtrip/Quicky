@@ -24,9 +24,15 @@ interface TicketCardProps {
   onAccept?: (id: string) => void;
   onDecline?: (id: string) => void;
   onPack?: (id: string) => void;
+  onReady?: (id: string) => void;
+  onDeliver?: (id: string) => void;
   isAccepting?: boolean;
   isDeclining?: boolean;
   isPacking?: boolean;
+  isReadying?: boolean;
+  isDelivering?: boolean;
+  isCompleted?: boolean;
+  onCardPress?: (id: string) => void;
 }
 
 export const TicketCard = ({
@@ -35,12 +41,20 @@ export const TicketCard = ({
   onAccept,
   onDecline,
   onPack,
+  onReady,
+  onDeliver,
   isAccepting,
   isDeclining,
   isPacking,
+  isReadying,
+  isDelivering,
+  isCompleted,
+  onCardPress,
 }: TicketCardProps) => {
   const [packedItems, setPackedItems] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  const hasAutoDeclined = React.useRef(false);
 
   useEffect(() => {
     if (!isPending || !ticket.expiresAt) return;
@@ -51,7 +65,8 @@ export const TicketCard = ({
       const remaining = Math.max(0, Math.floor((expires - now) / 1000));
       setTimeLeft(remaining);
       
-      if (remaining === 0 && onDecline) {
+      if (remaining === 0 && onDecline && !hasAutoDeclined.current) {
+        hasAutoDeclined.current = true;
         onDecline(ticket.id);
       }
     };
@@ -59,17 +74,33 @@ export const TicketCard = ({
     calculateTimeLeft();
     const interval = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(interval);
-  }, [isPending, ticket.expiresAt, onDecline, ticket.id]);
+  }, [isPending, ticket.expiresAt, ticket.id]); // Removed onDecline to avoid infinite loops
 
   const toggleItemPacked = (itemId: string) => {
+    let newPackedItems: string[];
     if (packedItems.includes(itemId)) {
-      setPackedItems(packedItems.filter((id) => id !== itemId));
+      newPackedItems = packedItems.filter((id) => id !== itemId);
     } else {
-      setPackedItems([...packedItems, itemId]);
+      newPackedItems = [...packedItems, itemId];
+    }
+    setPackedItems(newPackedItems);
+
+    // Auto-pack if all items are checked
+    if (
+      newPackedItems.length === ticket.order.items.length &&
+      onPack &&
+      ticket.order.status === 'ACCEPTED' &&
+      !isPacking
+    ) {
+      onPack(ticket.id);
     }
   };
 
-  const allItemsPacked = ticket.order.items.length === packedItems.length;
+  const allItemsPacked = packedItems.length === ticket.order.items.length;
+
+  const isStatusAccepted = ticket.order.status === 'ACCEPTED';
+  const isStatusPacked = ticket.order.status === 'PACKED';
+  const isStatusReady = ticket.order.status === 'READY_FOR_PICKUP';
   const isAwaitingPayment = ticket.order.status === 'AWAITING_PAYMENT';
 
   const totalItems = ticket.order.items.reduce((acc, item) => acc + item.quantity, 0);
@@ -114,12 +145,18 @@ export const TicketCard = ({
   });
 
   return (
-    <View style={[styles.ticketCard, isAwaitingPayment && styles.ticketCardAwaiting]}>
-      {/* Header */}
+    <Pressable 
+      style={[
+        styles.ticketCard, 
+        isAwaitingPayment && styles.ticketCardAwaiting,
+        isCompleted && styles.ticketCardCompleted
+      ]}
+      onPress={() => onCardPress?.(ticket.id)}
+    >
       <View style={styles.ticketHeader}>
         <View style={styles.headerLeft}>
           <View style={styles.idRow}>
-            <Text style={styles.orderId}>#{ticket.orderId.slice(-6).toUpperCase()}</Text>
+            <Text style={styles.orderId}>#{ticket.orderId.slice(0, 8).toUpperCase()}</Text>
             {isPending && (
               <View style={[styles.timeBadge, timeLeft <= 15 ? styles.timeBadgeDanger : styles.timeBadgeWarning]}>
                 {timeLeft <= 15 && <View style={styles.timeBadgeDot} />}
@@ -128,8 +165,20 @@ export const TicketCard = ({
                 </Text>
               </View>
             )}
+            {isCompleted && (
+              <View style={styles.deliveredBadge}>
+                <Text style={styles.deliveredBadgeText}>Delivered ✓</Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.customerName}>Customer: Rahul</Text>
+          <Text style={styles.customerName}>
+            {ticket.order.user?.name || 'Customer'}
+          </Text>
+          {ticket.order.user?.address && (
+            <Text style={styles.customerAddress} numberOfLines={2}>
+              {ticket.order.user.address}
+            </Text>
+          )}
         </View>
         
         <View style={styles.headerRight}>
@@ -159,40 +208,87 @@ export const TicketCard = ({
             </Pressable>
             
             <Pressable
-              style={({pressed}) => [styles.actionButton, styles.acceptButton, pressed && styles.btnPressed]}
-              onPress={() => onAccept?.(ticket.id)}
-              disabled={isDeclining || isAccepting}
+              style={({pressed}) => [
+                styles.actionButton, 
+                ticket.order.paymentMethod === 'PAYPAL' ? styles.packButtonDisabled : styles.acceptButton, 
+                pressed && ticket.order.paymentMethod !== 'PAYPAL' && styles.btnPressed
+              ]}
+              onPress={() => ticket.order.paymentMethod !== 'PAYPAL' && onAccept?.(ticket.id)}
+              disabled={isDeclining || isAccepting || ticket.order.paymentMethod === 'PAYPAL'}
             >
               {isAccepting ? (
                 <ActivityIndicator color={COLORS.onPrimaryContainer} size="small" />
               ) : (
-                <Text style={styles.acceptText}>Accept</Text>
+                <Text style={ticket.order.paymentMethod === 'PAYPAL' ? styles.packTextDisabled : styles.acceptText}>
+                  {ticket.order.paymentMethod === 'PAYPAL' ? 'PayPal Rejected' : 'Accept'}
+                </Text>
               )}
             </Pressable>
           </View>
         ) : (
           !isAwaitingPayment && (
-            <Pressable
-              style={({pressed}) => [
-                styles.packButton,
-                !allItemsPacked && styles.packButtonDisabled,
-                pressed && allItemsPacked && styles.btnPressed
-              ]}
-              onPress={() => onPack?.(ticket.id)}
-              disabled={!allItemsPacked || isPacking}
-            >
-              {isPacking ? (
-                <ActivityIndicator color={allItemsPacked ? COLORS.onPrimary : COLORS.outlineVariant} size="small" />
-              ) : (
-                <Text style={[styles.packText, !allItemsPacked && styles.packTextDisabled]}>
-                  {allItemsPacked ? 'Mark as Ready to Ship' : `Check all items to proceed (${packedItems.length}/${ticket.order.items.length})`}
-                </Text>
-              )}
-            </Pressable>
+            isStatusAccepted ? (
+              <Pressable
+                style={({pressed}) => [
+                  styles.packButton,
+                  !allItemsPacked && styles.packButtonDisabled,
+                  pressed && allItemsPacked && styles.btnPressed
+                ]}
+                onPress={() => onPack?.(ticket.id)}
+                disabled={!allItemsPacked || isPacking}
+              >
+                {isPacking ? (
+                  <ActivityIndicator color={allItemsPacked ? COLORS.onPrimary : COLORS.outlineVariant} size="small" />
+                ) : (
+                  <Text style={[styles.packText, !allItemsPacked && styles.packTextDisabled]}>
+                    {allItemsPacked ? 'Mark as Packed' : `Check all items to proceed (${packedItems.length}/${ticket.order.items.length})`}
+                  </Text>
+                )}
+              </Pressable>
+            ) : isStatusPacked ? (
+              <Pressable
+                style={({pressed}) => [
+                  styles.packButton,
+                  pressed && styles.btnPressed
+                ]}
+                onPress={() => onReady?.(ticket.id)}
+                disabled={isReadying}
+              >
+                {isReadying ? (
+                  <ActivityIndicator color={COLORS.onPrimary} size="small" />
+                ) : (
+                  <Text style={styles.packText}>
+                    Mark as Ready
+                  </Text>
+                )}
+              </Pressable>
+            ) : isStatusReady ? (
+              <Pressable
+                style={({pressed}) => [
+                  styles.packButton,
+                  pressed && styles.btnPressed
+                ]}
+                onPress={() => onDeliver?.(ticket.id)}
+                disabled={isDelivering}
+              >
+                {isDelivering ? (
+                  <ActivityIndicator color={COLORS.onPrimary} size="small" />
+                ) : (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={styles.packText}>
+                      Handover to Customer
+                    </Text>
+                    <Text style={styles.hindiLabel}>
+                      ग्राहक को सौंपें
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            ) : null
           )
         )}
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -212,6 +308,10 @@ const styles = StyleSheet.create({
   },
   ticketCardAwaiting: {
     opacity: 0.7,
+  },
+  ticketCardCompleted: {
+    opacity: 0.6,
+    backgroundColor: '#f6fafa', // even more muted
   },
   ticketHeader: {
     flexDirection: 'row',
@@ -263,9 +363,25 @@ const styles = StyleSheet.create({
   timeBadgeTextWarning: {
     color: COLORS.primary,
   },
+  deliveredBadge: {
+    backgroundColor: 'rgba(81, 102, 7, 0.1)', // secondary tint
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  deliveredBadgeText: {
+    color: COLORS.secondary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   customerName: {
     fontSize: 16,
     color: COLORS.onSurfaceVariant,
+  },
+  customerAddress: {
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
+    marginTop: 2,
   },
   headerRight: {
     alignItems: 'flex-end',
@@ -409,6 +525,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.onPrimary,
+  },
+  hindiLabel: {
+    fontSize: 12,
+    color: COLORS.onPrimary,
+    opacity: 0.9,
+    marginTop: 2,
   },
   packTextDisabled: {
     color: COLORS.outlineVariant,

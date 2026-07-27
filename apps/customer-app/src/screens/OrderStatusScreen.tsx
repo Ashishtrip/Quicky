@@ -1,18 +1,17 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '@quicky/ui-kit';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { userSocket } from '../services/socket';
-import { OrderResult, useSubmitRating, useCancelOrder } from '@quicky/api-client';
+import { OrderResult, useCancelOrder } from '@quicky/api-client';
 import { useAuthStore } from '../stores/authStore';
-import MapView, { Marker, Polyline } from 'react-native-maps';
-import * as Location from 'expo-location';
+import { MaterialIcons } from '@expo/vector-icons';
+import { ROHINI_LAT, ROHINI_LNG } from '../hooks/useProductFilters';
 
 type OrderStatusRouteProp = RouteProp<RootStackParamList, 'OrderStatus'>;
-
 
 export function OrderStatusScreen() {
   const route = useRoute<OrderStatusRouteProp>();
@@ -20,279 +19,289 @@ export function OrderStatusScreen() {
   const { orderId, initialStatus, initialOrderData } = route.params as any;
   const { user } = useAuthStore();
 
-  const [status, setStatus] = useState<string>(initialStatus === 'PENDING' ? 'FINDING_STORE' : (initialStatus || 'FINDING_STORE'));
   const [orderData, setOrderData] = useState<OrderResult | null>(initialOrderData || null);
-  const [customerLocation, setCustomerLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [cancelCountdown, setCancelCountdown] = useState(0);
-
-  const submitRatingMutation = useSubmitRating();
-  const cancelOrderMutation = useCancelOrder();
-  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [pulseAnim] = useState(new Animated.Value(0));
+  const [progressAnim] = useState(new Animated.Value(0));
+  const [hasFailed, setHasFailed] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({});
-          setCustomerLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-        }
-      } catch (e) {
-        console.warn('Could not get customer location', e);
-      }
-    })();
-
-    return () => {
-      timeoutRefs.current.forEach(clearTimeout);
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    };
-  }, []);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, [pulseAnim]);
 
   useEffect(() => {
     userSocket.connect(user!.uid);
 
-    const unsubscribeAccepted = userSocket.subscribe('order-accepted', (payload: OrderResult) => {
-      if (payload.id === orderId) {
-        setStatus('ACCEPTED');
-        setOrderData(payload);
-        
-        // Start 10-second countdown for cancel
-        setCancelCountdown(10);
-        countdownIntervalRef.current = setInterval(() => {
-          setCancelCountdown(prev => {
-            if (prev <= 1) {
-              if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
+    let isDone = false;
 
-        // Simulate delivery and ask for rating
-        const deliveryTimeout = setTimeout(() => {
+    // Start 60-second progress bar animation
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 60000,
+      easing: Easing.linear,
+      useNativeDriver: false, // width animation requires false
+    }).start(({ finished }) => {
+      if (finished && !isDone) {
+        // Timeout reached without acceptance
+        isDone = true;
+        setHasFailed(true);
+        import('react-native').then(({ Alert }) => {
           Alert.alert(
-            'Order Delivered! 🚚',
-            'Was this as fresh as labelled?',
-            [
-              { text: 'Good', onPress: () => { submitRatingMutation.mutate({ orderId, rating: 'GOOD' }); navigation.navigate('MainTabs'); } },
-              { text: 'Average', onPress: () => { submitRatingMutation.mutate({ orderId, rating: 'AVERAGE' }); navigation.navigate('MainTabs'); } },
-              { text: 'Poor', onPress: () => { submitRatingMutation.mutate({ orderId, rating: 'POOR' }); navigation.navigate('MainTabs'); }, style: 'destructive' },
-            ],
-            { cancelable: false }
+            'Fail to Find Store', 
+            'Try Again Later', 
+            [{ text: 'OK', onPress: () => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainTabs' as any) }]
           );
-        }, 8000 + 10000); // 10s wait for cancel window + 8s delivery simulation
-        timeoutRefs.current.push(deliveryTimeout);
+        });
       }
     });
 
-    const unsubscribeCancelled = userSocket.subscribe('order-cancelled', (payload: any) => {
-      if (payload.orderId === orderId) {
-        setStatus('CANCELLED');
-        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-        timeoutRefs.current.forEach(clearTimeout);
+    const handleAcceptance = (payload: OrderResult) => {
+      if (payload.id === orderId && !isDone) {
+        isDone = true;
+        progressAnim.stopAnimation();
+        // Jump to 100%
+        Animated.timing(progressAnim, {
+          toValue: 1,
+          duration: 300,
+          easing: Easing.ease,
+          useNativeDriver: false,
+        }).start(() => {
+          // Navigate to My Orders (OrdersScreen tab)
+          setTimeout(() => {
+             navigation.navigate('MainTabs' as any, { screen: 'Orders' } as any);
+          }, 300);
+        });
+      }
+    };
+
+    const unsubscribeAccepted = userSocket.subscribe('order-accepted', handleAcceptance);
+    
+    const unsubscribeStatusChanged = userSocket.subscribe('order-status-changed', (payload: OrderResult) => {
+      if (payload.id === orderId && payload.status && payload.status !== 'PLACED' && payload.status !== 'PENDING') {
+         handleAcceptance(payload);
+      }
+    });
+
+    const unsubscribeExpired = userSocket.subscribe('order-expired', (payload: OrderResult) => {
+      if (payload.id === orderId && !isDone) {
+        isDone = true;
+        progressAnim.stopAnimation();
+        setHasFailed(true);
+        import('react-native').then(({ Alert }) => {
+          Alert.alert(
+            'Fail to Find Store', 
+            'Try Again Later', 
+            [{ text: 'OK', onPress: () => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainTabs' as any) }]
+          );
+        });
       }
     });
 
     return () => {
       unsubscribeAccepted();
-      unsubscribeCancelled();
+      unsubscribeStatusChanged();
+      unsubscribeExpired();
+      progressAnim.stopAnimation();
       userSocket.disconnect();
     };
-  }, [orderId, navigation, submitRatingMutation]);
+  }, [orderId, navigation, progressAnim, user]);
 
-  // Format the ETA
-  let etaDisplay = 'Calculating...';
-  if (orderData?.delivery?.estimatedDelivery) {
-    const etaDate = new Date(orderData.delivery.estimatedDelivery);
-    const mins = Math.max(1, Math.round((etaDate.getTime() - Date.now()) / 60000));
-    etaDisplay = `${mins} min${mins > 1 ? 's' : ''}`;
-  }
+  const customerLat = orderData?.lat || ROHINI_LAT;
+  const customerLng = orderData?.lng || ROHINI_LNG;
 
-  const isFindingStore = status === 'FINDING_STORE' || status === 'PENDING';
-  const isAccepted = status === 'ACCEPTED' || status === 'PACKED' || status === 'OUT_FOR_DELIVERY';
-  const isCancelled = status === 'CANCELLED';
-  const isDelivered = status === 'FULFILLED' || status === 'DELIVERED';
+  const pulseScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 3]
+  });
+  
+  const pulseOpacity = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.6, 0]
+  });
 
-  const handleCancel = () => {
-    cancelOrderMutation.mutate(orderId, {
-      onSuccess: () => {
-        setStatus('CANCELLED');
-        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-        timeoutRefs.current.forEach(clearTimeout);
-      },
-      onError: (err: any) => {
-        Alert.alert('Cancel Failed', 'Could not cancel the order at this time.');
-      }
-    });
-  };
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%']
+  });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.content}>
-        {isFindingStore ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator size="large" color={Colors.black} />
-            <Text style={styles.title}>Finding a Store...</Text>
-            <Text style={styles.subtitle}>
-              Broadcasting your order to nearby kirana stores with matching inventory.
-            </Text>
-            
-            <Pressable style={styles.cancelContainer} onPress={handleCancel}>
-              <Text style={styles.cancelText}>Cancel Order</Text>
-            </Pressable>
-          </View>
-        ) : null}
-
-        {isAccepted ? (
-          <View style={styles.centerState}>
-            <Text style={styles.emoji}>🏪</Text>
-            <Text style={styles.title}>Preparing your order</Text>
-            <Text style={styles.subtitle}>
-              {orderData?.assignedStore?.name || 'A nearby store'} has accepted your order and is packing it now.
-            </Text>
-
-            <View style={styles.etaContainer}>
-              <Text style={styles.etaLabel}>Estimated Arrival</Text>
-              <Text style={styles.etaValue}>{etaDisplay}</Text>
-            </View>
-
-            {cancelCountdown > 0 && (
-              <Pressable style={styles.cancelContainer} onPress={handleCancel}>
-                <Text style={styles.cancelText}>Cancel Order ({cancelCountdown}s)</Text>
-              </Pressable>
-            )}
-
-            {orderData?.assignedStore?.latitude && customerLocation && (
-              <View style={styles.mapContainer}>
-                <MapView
-                  style={styles.map}
-                  initialRegion={{
-                    latitude: (orderData.assignedStore.latitude + customerLocation.latitude) / 2,
-                    longitude: (orderData.assignedStore.longitude + customerLocation.longitude) / 2,
-                    latitudeDelta: Math.abs(orderData.assignedStore.latitude - customerLocation.latitude) * 2 || 0.05,
-                    longitudeDelta: Math.abs(orderData.assignedStore.longitude - customerLocation.longitude) * 2 || 0.05,
-                  }}
-                  scrollEnabled={false}
-                  zoomEnabled={false}
-                >
-                  <Marker coordinate={{ latitude: customerLocation.latitude, longitude: customerLocation.longitude }} title="You" pinColor="blue" />
-                  <Marker coordinate={{ latitude: orderData.assignedStore.latitude, longitude: orderData.assignedStore.longitude }} title="Store" pinColor="red" />
-                  <Polyline 
-                    coordinates={[
-                      { latitude: orderData.assignedStore.latitude, longitude: orderData.assignedStore.longitude },
-                      { latitude: customerLocation.latitude, longitude: customerLocation.longitude }
-                    ]}
-                    strokeColor={Colors.primary}
-                    strokeWidth={3}
-                    lineDashPattern={[5, 5]} // Dotted arc line
-                  />
-                </MapView>
-              </View>
-            )}
-          </View>
-        ) : null}
-
-        {isCancelled ? (
-          <View style={styles.centerState}>
-            <Text style={styles.emoji}>❌</Text>
-            <Text style={styles.title}>Order Cancelled</Text>
-            <Text style={styles.subtitle}>
-              Your order has been cancelled successfully.
-            </Text>
-            <View style={styles.cancelContainer}>
-              <Text style={styles.cancelText} onPress={() => navigation.navigate('MainTabs')}>Go Home</Text>
-            </View>
-          </View>
-        ) : null}
-
-        {isDelivered ? (
-          <View style={styles.centerState}>
-            <Text style={styles.emoji}>✅</Text>
-            <Text style={styles.title}>Order Delivered</Text>
-            <Text style={styles.subtitle}>
-              This order was successfully delivered.
-            </Text>
-            <View style={styles.cancelContainer}>
-              <Text style={styles.cancelText} onPress={() => navigation.navigate('MainTabs')}>Go Home</Text>
-            </View>
-          </View>
-        ) : null}
+    <View style={styles.container}>
+      <View style={styles.mapContainer}>
+        <View style={[styles.map, { backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center' }]}>
+          <MaterialIcons name="map" size={64} color={Colors.outline} />
+          <Text style={{ marginTop: 8, color: Colors.outline, fontFamily: Typography.bodySmall.fontFamily }}>Map Placeholder</Text>
+        </View>
+        
+        <SafeAreaView style={styles.backButtonContainer} edges={['top']}>
+          <Pressable onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainTabs' as any)} style={styles.backButton}>
+            <MaterialIcons name="arrow-back" size={24} color={Colors.surface} />
+          </Pressable>
+        </SafeAreaView>
       </View>
-    </SafeAreaView>
+
+      <View style={styles.bottomCard}>
+        <View style={styles.dragHandle} />
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>Processing your order ticket</Text>
+          <Text style={styles.subtitle}>Finding the fastest store nearby...</Text>
+        </View>
+
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBarBg}>
+            <Animated.View style={[styles.progressBarFill, { width: progressWidth }]} />
+          </View>
+          <View style={styles.progressLabels}>
+            <Text style={styles.progressLabelLeft}>Searching</Text>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-  },
-  content: {
-    flex: 1,
-    padding: Spacing.xl,
-    justifyContent: 'center',
-  },
-  centerState: {
-    alignItems: 'center',
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: Spacing.md,
-  },
-  title: {
-    ...Typography.h2,
-    marginBottom: Spacing.sm,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  subtitle: {
-    ...Typography.bodyLarge,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    marginBottom: Spacing.xl,
-  },
-  etaContainer: {
-    backgroundColor: Colors.surface,
-    padding: Spacing.xl,
-    borderRadius: Radii.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    width: '100%',
-  },
-  etaLabel: {
-    ...Typography.bodyLarge,
-    color: Colors.textMuted,
-    marginBottom: Spacing.xs,
-  },
-  etaValue: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
+    backgroundColor: '#f6fafa', // surface-dim equivalent
   },
   mapContainer: {
-    width: '100%',
-    height: 200,
-    marginTop: Spacing.xl,
-    borderRadius: Radii.card,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.border,
+    flex: 1,
+    position: 'relative',
   },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  cancelContainer: {
-    marginTop: Spacing['2xl'],
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: Radii.pill,
-    backgroundColor: Colors.error,
+  backButtonContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    padding: Spacing.md,
   },
-  cancelText: {
-    ...Typography.bodyLarge,
-    color: Colors.white,
-    fontWeight: 'bold',
+  backButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  storePinInactive: {
+    width: 32,
+    height: 32,
+    backgroundColor: Colors.white,
+    borderWidth: 2,
+    borderColor: '#bdc9c9',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.6,
+  },
+  userPinContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#57c0c4',
+  },
+  userPin: {
+    width: 48,
+    height: 48,
+    backgroundColor: '#57c0c4',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  bottomCard: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.sm,
+    paddingBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 16,
+    zIndex: 30,
+  },
+  dragHandle: {
+    width: 48,
+    height: 6,
+    backgroundColor: 'rgba(189, 201, 201, 0.4)',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginVertical: 12,
+  },
+  textContainer: {
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#171c1d',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#3d4949',
+    marginTop: 4,
+  },
+  progressContainer: {
+    width: '100%',
+  },
+  progressBarBg: {
+    height: 8,
+    width: '100%',
+    backgroundColor: '#dfe3e3',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    width: '30%',
+    backgroundColor: '#57c0c4',
+    borderRadius: 4,
+  },
+  progressLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  progressLabelLeft: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#6d797a',
+    letterSpacing: 0.5,
   }
 });

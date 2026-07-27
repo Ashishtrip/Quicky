@@ -8,6 +8,8 @@ export interface CheckoutItem {
 
 export interface CheckoutRequest {
   customerId: string;
+  customerName?: string;
+  deliveryAddress?: string;
   lat: number;
   lng: number;
   radiusKm?: number;
@@ -18,6 +20,8 @@ export interface CheckoutRequest {
 export interface OrderResult {
   id: string;
   customerId: string;
+  lat?: number;
+  lng?: number;
   status: string;
   paymentMethod: string;
   paymentStatus: string;
@@ -28,6 +32,10 @@ export interface OrderResult {
     name: string;
     latitude: number;
     longitude: number;
+  };
+  user?: {
+    name: string;
+    address: string;
   };
   delivery?: {
     deliveryStatus: string;

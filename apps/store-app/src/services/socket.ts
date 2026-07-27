@@ -35,8 +35,14 @@ class SocketService {
   }
 
   emitLocation(storeId: string, latitude: number, longitude: number) {
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('location_update', { storeId, latitude, longitude });
+    if (this.socket) {
+      if (this.socket.connected) {
+        this.socket.emit('location_update', { storeId, latitude, longitude });
+      } else {
+        this.socket.once('connect', () => {
+          this.socket?.emit('location_update', { storeId, latitude, longitude });
+        });
+      }
     }
   }
 

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchCustomerOrders, cancelOrder } from '../orders';
 import { OrderResult } from '../checkout';
 
-export function useCustomerOrders(customerId: string | undefined) {
+export function useCustomerOrders(customerId: string | undefined, options?: { refetchInterval?: number }) {
   return useQuery<OrderResult[], Error>({
     queryKey: ['orders', customerId],
     queryFn: () => {
@@ -10,6 +10,7 @@ export function useCustomerOrders(customerId: string | undefined) {
       return fetchCustomerOrders(customerId);
     },
     enabled: !!customerId,
+    refetchInterval: options?.refetchInterval,
   });
 }
 

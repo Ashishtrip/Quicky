@@ -8,6 +8,7 @@ import { useAuthStore } from '../stores/authStore';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCategories } from '@quicky/api-client';
 import { useTagging } from '../hooks/useTagging';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddCustomProduct'>;
@@ -45,6 +46,7 @@ export const AddCustomProductScreen = ({ navigation }: { navigation: NavigationP
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: categories = [] } = useCategories();
   const { mutateAsync } = useTagging();
 
   const incrementQuantity = () => {
@@ -120,6 +122,11 @@ export const AddCustomProductScreen = ({ navigation }: { navigation: NavigationP
       return;
     }
     
+    if (!category) {
+      Alert.alert('Error', 'Please select a category');
+      return;
+    }
+
     if (!quantity.trim() || parseInt(quantity) <= 0) {
       Alert.alert('Error', 'Valid quantity is required');
       return;
@@ -152,6 +159,7 @@ export const AddCustomProductScreen = ({ navigation }: { navigation: NavigationP
         name: name.trim(),
         unit,
         imageUrl: downloadUrl,
+        categoryId: category,
       });
       
       Alert.alert('Success', 'Product added successfully!', [
@@ -224,10 +232,9 @@ export const AddCustomProductScreen = ({ navigation }: { navigation: NavigationP
                   style={styles.picker}
                 >
                   <Picker.Item label="Select Category" value="" color={COLORS.outline} />
-                  <Picker.Item label="Fruits & Vegetables" value="fruits" />
-                  <Picker.Item label="Dairy" value="dairy" />
-                  <Picker.Item label="Bakery" value="bakery" />
-                  <Picker.Item label="Meat & Poultry" value="meat" />
+                  {categories.map((cat: any) => (
+                    <Picker.Item key={cat.id} label={cat.name} value={cat.id} />
+                  ))}
                 </Picker>
               </View>
             </View>

@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { Platform } from 'react-native';
 
-const API_BASE_URL = 'https://quicky-production.up.railway.app';
+const API_BASE_URL = process.env['EXPO_PUBLIC_API_URL'] || 'http://localhost:3000';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -31,6 +31,16 @@ class SocketService {
     this.socket.on('order-packed', (payload: any) => {
       console.log('[User WS] Received order-packed:', payload);
       this.notifyListeners('order-packed', payload);
+    });
+
+    this.socket.on('order-status-changed', (payload: any) => {
+      console.log('[User WS] Received order-status-changed:', payload);
+      this.notifyListeners('order-status-changed', payload);
+    });
+
+    this.socket.on('order-expired', (payload: any) => {
+      console.log('[User WS] Received order-expired:', payload);
+      this.notifyListeners('order-expired', payload);
     });
   }
 

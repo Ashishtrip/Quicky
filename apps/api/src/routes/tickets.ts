@@ -67,3 +67,39 @@ ticketsRouter.post('/:ticketId/pack', async (req, res) => {
   }
 });
 
+import { markTicketReady, markTicketDelivered } from '../services/ticketService';
+
+ticketsRouter.post('/:ticketId/ready', async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { storeId } = req.body;
+
+    if (!storeId) {
+      return res.status(400).json({ error: 'storeId is required.' });
+    }
+
+    const order = await markTicketReady(storeId, ticketId);
+    res.json({ data: order, message: 'Order marked as ready successfully!' });
+  } catch (error: any) {
+    console.error('Ready ticket error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+ticketsRouter.post('/:ticketId/deliver', async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { storeId } = req.body;
+
+    if (!storeId) {
+      return res.status(400).json({ error: 'storeId is required.' });
+    }
+
+    const order = await markTicketDelivered(storeId, ticketId);
+    res.json({ data: order, message: 'Order marked as delivered successfully!' });
+  } catch (error: any) {
+    console.error('Deliver ticket error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+

@@ -82,17 +82,17 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingVertical: 4,
     gap: Spacing.sm,
   },
   chip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: Radii.pill,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
-    minHeight: 36,
+    minHeight: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.textSecondary,
   },
   chipTextActive: {

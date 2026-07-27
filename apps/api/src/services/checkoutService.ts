@@ -9,6 +9,8 @@ export interface CheckoutItem {
 
 export interface CheckoutRequest {
   customerId: string;
+  customerName?: string;
+  deliveryAddress?: string;
   lat: number;
   lng: number;
   radiusKm?: number;
@@ -17,12 +19,12 @@ export interface CheckoutRequest {
 }
 
 export async function createCheckout(req: CheckoutRequest) {
-  const radiusKm = req.radiusKm ?? 3;
+  const radiusKm = Math.min(req.radiusKm ?? 3, 3);
   const paymentMethod = req.paymentMethod ?? "COD";
 
-  // 1. Find all active stores
+  // 1. Find all active and open stores
   const allStores = await prisma.store.findMany({
-    where: { isActive: true },
+    where: { isActive: true, isOpen: true },
   });
 
   // Filter nearby
@@ -117,16 +119,23 @@ export async function createCheckout(req: CheckoutRequest) {
   }
 
   // 4. Create the order
-  const deliveryFee = calculatedTotal > 350 ? 0 : 25;
+  const deliveryFee =
+    calculatedTotal >= 349 ? 0
+    : calculatedTotal < 250 ? 30
+    : 15;
 
   // Ensure the user exists in the DB since Firebase manages auth
   await prisma.user.upsert({
     where: { id: req.customerId },
-    update: {},
+    update: {
+      name: req.customerName || 'Quicky User',
+      address: req.deliveryAddress,
+    },
     create: {
       id: req.customerId,
-      name: 'Quicky User',
+      name: req.customerName || 'Quicky User',
       email: `${req.customerId}@quicky.local`,
+      address: req.deliveryAddress,
     },
   });
 
@@ -148,8 +157,13 @@ export async function createCheckout(req: CheckoutRequest) {
       }
     },
     include: {
-      items: true,
+      items: {
+        include: {
+          catalogItem: true
+        }
+      },
       payment: true,
+      user: true,
     },
   });
 

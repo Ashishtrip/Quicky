@@ -59,8 +59,19 @@ export const storeAssignmentWorker = new Worker(
     }
 
     if (!selectedStoreId || !selectedStore) {
-      console.log(`No available stores found for Order ${orderId} after ${attempt} attempts.`);
-      // Optionally transition order to CANCELLED or notify admin
+      console.log(`No available stores found for Order ${orderId} after ${attempt} attempts. Cancelling.`);
+      
+      const cancelledOrder = await prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'CANCELLED' }
+      });
+      
+      await redis.publish('user-notifications', JSON.stringify({
+        userId: cancelledOrder.userId,
+        event: 'order-cancelled',
+        payload: { orderId }
+      }));
+      
       return;
     }
 

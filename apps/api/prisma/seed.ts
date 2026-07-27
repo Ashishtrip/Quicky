@@ -15,6 +15,7 @@ async function main() {
   await prisma.catalogItem.deleteMany();
   await prisma.category.deleteMany();
   await prisma.store.deleteMany();
+  await prisma.address.deleteMany();
   await prisma.user.deleteMany();
 
   const user = await prisma.user.create({
@@ -42,6 +43,7 @@ async function main() {
       contactPhone: '9876543210',
       isVerified: true,
       isActive: true,
+      isOpen: true,
     }
   });
 
@@ -52,23 +54,14 @@ async function main() {
   console.log(`Created store: ${store.id}`);
 
   // 2. Create Categories
-  const categoryFruits = await prisma.category.create({
-    data: {
-      name: 'Fresh Fruits',
-      useTodayDiscountPct: 40, // 40% discount on near-expiry
-      sortOrder: 1,
-    }
-  });
-
-  const categoryVeg = await prisma.category.create({
-    data: {
-      name: 'Fresh Vegetables',
-      useTodayDiscountPct: 50,
-      sortOrder: 2,
-    }
-  });
+  const categoryMeat = await prisma.category.create({ data: { name: 'Meat & poultry', useTodayDiscountPct: 40, sortOrder: 1 } });
+  const categorySnacks = await prisma.category.create({ data: { name: 'Snacks', useTodayDiscountPct: 35, sortOrder: 2 } });
+  const categoryBeverages = await prisma.category.create({ data: { name: 'Beverages', useTodayDiscountPct: 35, sortOrder: 3 } });
+  const categoryFruits = await prisma.category.create({ data: { name: 'Fruits', useTodayDiscountPct: 40, sortOrder: 4 } });
+  const categoryVeg = await prisma.category.create({ data: { name: 'Vegetables', useTodayDiscountPct: 40, sortOrder: 5 } });
+  const categoryDairy = await prisma.category.create({ data: { name: 'Dairy', useTodayDiscountPct: 40, sortOrder: 6 } });
   
-  console.log(`Created categories: ${categoryFruits.name}, ${categoryVeg.name}`);
+  console.log(`Created categories: ${categoryMeat.name}, ${categorySnacks.name}, ${categoryBeverages.name}, ${categoryFruits.name}, ${categoryVeg.name}, ${categoryDairy.name}`);
 
   // 3. Create Catalog Items
   const apple = await prisma.catalogItem.create({
@@ -104,7 +97,29 @@ async function main() {
     }
   });
 
-  console.log(`Created catalog items: Apples, Bananas, Onions`);
+  const chips = await prisma.catalogItem.create({
+    data: {
+      categoryId: categorySnacks.id,
+      name: 'Lays Classic Salted',
+      unit: '50 g',
+      referenceMrp: 20,
+      imageUrl: 'https://images.unsplash.com/photo-1566478989037-e92383833545?auto=format&fit=crop&w=500&q=60',
+      tags: ['snack', 'chips'],
+    }
+  });
+
+  const cola = await prisma.catalogItem.create({
+    data: {
+      categoryId: categoryBeverages.id,
+      name: 'Coca Cola Can',
+      unit: '300 ml',
+      referenceMrp: 40,
+      imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=500&q=60',
+      tags: ['beverage', 'cola', 'drink'],
+    }
+  });
+
+  console.log(`Created catalog items: Apples, Bananas, Onions, Lays, Cola`);
 
   // 4. Create Listings for the Store
   // Apples - Use Today

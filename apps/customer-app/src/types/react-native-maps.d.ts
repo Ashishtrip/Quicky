@@ -39,4 +39,14 @@ declare module 'react-native-maps' {
   }
 
   export class Polyline extends Component<PolylineProps> {}
+
+  export interface CircleProps {
+    center: { latitude: number; longitude: number };
+    radius: number;
+    fillColor?: string;
+    strokeColor?: string;
+    strokeWidth?: number;
+  }
+
+  export class Circle extends Component<CircleProps> {}
 }

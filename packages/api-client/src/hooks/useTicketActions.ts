@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { acceptTicket, declineTicket, packTicket } from '../tickets';
+import { acceptTicket, declineTicket, packTicket, readyTicket, deliverTicket } from '../tickets';
 import { OrderResult } from '../checkout';
 
 export function useTicketActions(storeId: string) {
@@ -26,5 +26,19 @@ export function useTicketActions(storeId: string) {
     },
   });
 
-  return { accept, decline, pack };
+  const ready = useMutation<OrderResult, Error, string>({
+    mutationFn: (ticketId) => readyTicket(storeId, ticketId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets', storeId] });
+    },
+  });
+
+  const deliver = useMutation<OrderResult, Error, string>({
+    mutationFn: (ticketId) => deliverTicket(storeId, ticketId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets', storeId] });
+    },
+  });
+
+  return { accept, decline, pack, ready, deliver };
 }

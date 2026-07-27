@@ -46,3 +46,6 @@ export { useAddresses, useAddAddress, useUpdateAddress, useDeleteAddress } from 
 export { fetchUserProfile, updateUserProfile } from './users';
 export type { UserProfile, UpdateUserProfileInput } from './users';
 export { useUserProfile, useUpdateUserProfile } from './hooks/useUserProfile';
+
+// Constants
+export { DELIVERY_FEES } from './constants';

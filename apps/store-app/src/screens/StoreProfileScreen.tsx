@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, Animated, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, Animated, PanResponder, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/authStore';
 import auth from '@react-native-firebase/auth';
@@ -10,13 +10,16 @@ import { requestForegroundPermissionsAsync, getCurrentPositionAsync, Accuracy } 
 // @ts-ignore
 import { reverseGeocodeAsync } from 'expo-location';
 import { Alert } from 'react-native';
+
 const COLORS = {
   surface: '#f6fafa',
   onSurface: '#171c1d',
   onSurfaceVariant: '#3d4949',
   primary: '#00696c',
   tertiary: '#8b4b55',
+  tertiaryContainer: '#ea9ba5',
   surfaceContainerLowest: '#ffffff',
+  surfaceContainerLow: '#f0f4f4',
   surfaceContainerHigh: '#e4e9e9',
   outlineVariant: '#bdc9c9',
   primaryContainer: '#57c0c4',
@@ -99,19 +102,12 @@ const CustomAnimatedSlider = ({ value, minimumValue, maximumValue, step, onSlidi
     })
   ).current;
 
-  const numTicks = Math.round((maximumValue - minimumValue) / step);
-  const ticks = Array.from({ length: numTicks + 1 }).map((_, i) => (i / numTicks) * 100);
-
   return (
     <View 
       style={styles.customSliderWrapper} 
       onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
     >
-      <View style={styles.customSliderTrack}>
-        {ticks.map((tick, i) => (
-          <View key={i} style={[styles.customSliderTick, { left: `${tick}%` }]} />
-        ))}
-      </View>
+      <View style={styles.customSliderTrack} />
       <Animated.View 
         style={[
           styles.customSliderFill, 
@@ -149,10 +145,6 @@ export const StoreProfileScreen = () => {
   
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
-  const [editOwnerName, setEditOwnerName] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editGst, setEditGst] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [editLat, setEditLat] = useState<number | undefined>(undefined);
   const [editLng, setEditLng] = useState<number | undefined>(undefined);
@@ -162,26 +154,37 @@ export const StoreProfileScreen = () => {
     setIsFetchingLocation(true);
     try {
       const { status } = await requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
+      
+      let lat: number | null = null;
+      let lng: number | null = null;
+      let location = null;
+
+      if (status === 'granted') {
+        try {
+          location = await getCurrentPositionAsync({ accuracy: Accuracy.Balanced });
+          if (location) {
+            lat = location.coords.latitude;
+            lng = location.coords.longitude;
+          }
+        } catch (err) {
+          console.warn('getCurrentPositionAsync failed', err);
+        }
+      }
+
+      if (__DEV__) {
+        lat = 28.7495;
+        lng = 77.0565;
+      }
+
+      if (lat === null || lng === null) {
         Alert.alert('Permission denied', 'Allow Quicky to access your location in settings to use this feature.');
         setIsFetchingLocation(false);
         return;
       }
 
-      let location = null;
-      try {
-        location = await getCurrentPositionAsync({ accuracy: Accuracy.Balanced });
-      } catch (err) {
-        console.warn('getCurrentPositionAsync failed', err);
-      }
-      
-      if (!location) {
-        throw new Error('Location could not be determined');
-      }
-
       const geocode = await reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude
+        latitude: lat,
+        longitude: lng
       });
 
       if (geocode && geocode.length > 0) {
@@ -194,8 +197,8 @@ export const StoreProfileScreen = () => {
         ].filter(Boolean);
         
         setEditAddress(addressParts.join(', '));
-        setEditLat(location.coords.latitude);
-        setEditLng(location.coords.longitude);
+        setEditLat(lat);
+        setEditLng(lng);
       }
     } catch (error) {
       console.error('Error fetching location:', error);
@@ -208,10 +211,6 @@ export const StoreProfileScreen = () => {
   useEffect(() => {
     if (storeData) {
       setEditName(storeData.name || '');
-      setEditOwnerName(storeData.ownerName || '');
-      setEditPhone(storeData.phone || '');
-      setEditEmail(storeData.contactEmail || '');
-      setEditGst(storeData.gstNumber || '');
       setEditAddress(storeData.address || '');
       if (storeData.latitude) setEditLat(storeData.latitude);
       if (storeData.longitude) setEditLng(storeData.longitude);
@@ -222,10 +221,6 @@ export const StoreProfileScreen = () => {
     try {
       await updateStore({ 
         name: editName, 
-        ownerName: editOwnerName,
-        phone: editPhone,
-        contactEmail: editEmail,
-        gstNumber: editGst,
         address: editAddress,
         latitude: editLat,
         longitude: editLng
@@ -242,11 +237,6 @@ export const StoreProfileScreen = () => {
     } catch (error) {
       console.error('Logout error', error);
     }
-  };
-
-  const handleToggleStatus = (isOpen: boolean) => {
-    if (storeData?.isOpen === isOpen) return;
-    updateStore({ isOpen });
   };
 
   if (loading) {
@@ -266,26 +256,26 @@ export const StoreProfileScreen = () => {
           style={({pressed}) => [styles.headerIconButton, pressed && { opacity: 0.7 }]}
           onPress={() => navigation.navigate('Dashboard' as any)}
         >
-          <MaterialIcons name="storefront" size={24} color={COLORS.onSurfaceVariant} />
+          <MaterialIcons name="storefront" size={24} color={COLORS.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>Quicky</Text>
         <Pressable 
           style={({pressed}) => [styles.headerIconButton, pressed && { opacity: 0.7 }]}
           onPress={() => navigation.navigate('Notifications' as any)}
         >
-          <MaterialIcons name="notifications" size={24} color={COLORS.onSurfaceVariant} />
+          <MaterialIcons name="notifications" size={24} color={COLORS.primary} />
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         
-        {/* Profile Header */}
         <View style={styles.profileSection}>
           <View style={styles.imageContainer}>
-            <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderImageText}>{storeData?.name?.[0]?.toUpperCase() || 'K'}</Text>
-            </View>
+             <Image 
+               source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC3keGekIBVi_RqHhy0VL2sAUAV_LfWD4mn9zyVcgJQuBpWHCYp4DaDHF66FzDoL686RXTqFgQrcglUiXnGy2Eo4w9EzfAcI_VlcikKIb7zF5vqEZ-oASicYbQA66tB3b02GcEjevIw4t8pOXkphO2IinNVyilm35v-pgZwiKG84ZQs-cQLkf_sAqmq9DNZi2muTzdTlne3-6hKt60_vpmpHkmsKRiKux3yf-etvrW5rzl9_C-MGRyBPX4n-xFjJkMB0k3CgaiNV3Q8' }} 
+               style={styles.profileImage} 
+             />
             <Pressable style={styles.editBadge} onPress={() => setIsEditing(!isEditing)}>
-              <Text style={styles.editIcon}>{isEditing ? '✕' : '✏️'}</Text>
+              <MaterialIcons name="edit" size={16} color={COLORS.primary} />
             </Pressable>
           </View>
           
@@ -301,93 +291,24 @@ export const StoreProfileScreen = () => {
           )}
           
           <View style={styles.verifiedBadge}>
-            <Text style={styles.verifiedIcon}>✓</Text>
+            <MaterialIcons name="verified" size={16} color={COLORS.verifiedText} />
             <Text style={styles.verifiedText}>Verified Freshness Partner</Text>
           </View>
 
           <View style={styles.ratingCard}>
             <Text style={styles.ratingScore}>4.8</Text>
             <View style={styles.ratingMeta}>
-              <Text style={styles.starIcon}>★</Text>
+              <MaterialIcons name="star" size={18} color={COLORS.starText} />
               <Text style={styles.ratingCount}>(124 ratings)</Text>
             </View>
           </View>
         </View>
 
-        {/* Store Details */}
-        <View style={styles.fullCard}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardTitleRow}>
-              <Text style={styles.cardIcon}>📝</Text>
-              <Text style={styles.cardTitle}>Store Details</Text>
-            </View>
-            <Pressable style={styles.editButton} onPress={() => setIsEditing(!isEditing)}>
-              <Text style={styles.editButtonText}>{isEditing ? 'Cancel' : 'Edit'}</Text>
-            </Pressable>
-          </View>
-          
-          {isEditing ? (
-            <View>
-              <TextInput
-                style={styles.editInputDetail}
-                value={editOwnerName}
-                onChangeText={setEditOwnerName}
-                placeholder="Owner Name"
-              />
-              <TextInput
-                style={styles.editInputDetail}
-                value={editPhone}
-                onChangeText={setEditPhone}
-                placeholder="Phone Number"
-                keyboardType="phone-pad"
-              />
-              <TextInput
-                style={styles.editInputDetail}
-                value={editEmail}
-                onChangeText={setEditEmail}
-                placeholder="Email Address"
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <TextInput
-                style={styles.editInputDetail}
-                value={editGst}
-                onChangeText={setEditGst}
-                placeholder="GST Number"
-                autoCapitalize="characters"
-              />
-              <Pressable style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Save Details</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View>
-              <Text style={styles.cardBodyText}>
-                <Text style={{fontWeight: 'bold'}}>Owner: </Text>
-                {storeData?.ownerName || 'Not specified'}
-              </Text>
-              <Text style={styles.cardBodyText}>
-                <Text style={{fontWeight: 'bold'}}>Phone: </Text>
-                {storeData?.phone || 'Not specified'}
-              </Text>
-              <Text style={styles.cardBodyText}>
-                <Text style={{fontWeight: 'bold'}}>Email: </Text>
-                {storeData?.contactEmail || 'Not specified'}
-              </Text>
-              <Text style={styles.cardBodyText}>
-                <Text style={{fontWeight: 'bold'}}>GST: </Text>
-                {storeData?.gstNumber || 'Not specified'}
-              </Text>
-            </View>
-          )}
-        </View>
-
         <View style={styles.gridContainer}>
-          {/* Store Location */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.cardTitleRow}>
-                <Text style={styles.cardIcon}>📍</Text>
+                <MaterialIcons name="location-on" size={18} color={COLORS.primary} style={styles.cardIcon} />
                 <Text style={styles.cardTitle}>Store Location</Text>
               </View>
               <Pressable style={styles.editButton} onPress={() => setIsEditing(!isEditing)}>
@@ -396,7 +317,7 @@ export const StoreProfileScreen = () => {
             </View>
             
             {isEditing ? (
-              <View>
+              <View style={styles.cardBodyOverlay}>
                 <TextInput
                   style={styles.editInputAddress}
                   value={editAddress}
@@ -413,7 +334,7 @@ export const StoreProfileScreen = () => {
                     <ActivityIndicator size="small" color={COLORS.primary} />
                   ) : (
                     <>
-                      <Text style={styles.locationButtonIcon}>📍</Text>
+                      <MaterialIcons name="my-location" size={14} color={COLORS.primary} style={styles.locationButtonIcon} />
                       <Text style={styles.locationButtonText}>Use Current Location</Text>
                     </>
                   )}
@@ -423,61 +344,41 @@ export const StoreProfileScreen = () => {
                 </Pressable>
               </View>
             ) : (
-              <Text style={styles.cardBodyText}>
-                {storeData?.address || 'Address not set'}
-              </Text>
+              <View style={styles.cardBodyOverlay}>
+                <Text style={styles.cardBodyText}>
+                  {storeData?.address || 'Address not set'}
+                </Text>
+              </View>
             )}
           </View>
 
-          {/* Operating Status */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.cardTitleRow}>
-                <Text style={styles.cardIcon}>🏪</Text>
-                <Text style={styles.cardTitle}>Operating Status</Text>
+                <MaterialIcons name="schedule" size={18} color={COLORS.primary} style={styles.cardIcon} />
+                <Text style={styles.cardTitle}>Operating Hours</Text>
               </View>
+              <Pressable style={styles.editButton}>
+                <Text style={styles.editButtonText}>Edit</Text>
+              </Pressable>
             </View>
-            <Text style={styles.statusDescription}>
-              If closed, no tickets will be raised to your store.
-            </Text>
-            
-            <View style={styles.statusButtonsContainer}>
-              <Pressable 
-                style={[
-                  styles.statusButton, 
-                  styles.statusButtonLeft,
-                  storeData?.isOpen ? styles.statusButtonActiveOpen : styles.statusButtonInactive
-                ]}
-                onPress={() => handleToggleStatus(true)}
-              >
-                <Text style={[
-                  styles.statusButtonText,
-                  storeData?.isOpen ? styles.statusButtonTextActive : styles.statusButtonTextInactive
-                ]}>OPEN</Text>
-              </Pressable>
-              
-              <Pressable 
-                style={[
-                  styles.statusButton, 
-                  styles.statusButtonRight,
-                  !storeData?.isOpen ? styles.statusButtonActiveClosed : styles.statusButtonInactive
-                ]}
-                onPress={() => handleToggleStatus(false)}
-              >
-                <Text style={[
-                  styles.statusButtonText,
-                  !storeData?.isOpen ? styles.statusButtonTextActive : styles.statusButtonTextInactive
-                ]}>CLOSED</Text>
-              </Pressable>
+            <View style={styles.hoursContainer}>
+              <View style={styles.hoursRow}>
+                <Text style={styles.hoursLabel}>Mon-Fri</Text>
+                <Text style={styles.hoursValue}>7am - 10pm</Text>
+              </View>
+              <View style={[styles.hoursRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.hoursLabel}>Sat-Sun</Text>
+                <Text style={styles.hoursValue}>8am - 11pm</Text>
+              </View>
             </View>
           </View>
         </View>
 
-        {/* Delivery Radius */}
         <View style={styles.fullCard}>
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleRow}>
-              <Text style={styles.cardIcon}>🚚</Text>
+              <MaterialIcons name="local-shipping" size={18} color={COLORS.primary} style={styles.cardIcon} />
               <Text style={styles.cardTitle}>Delivery Radius</Text>
             </View>
             <View style={styles.radiusBadge}>
@@ -486,22 +387,51 @@ export const StoreProfileScreen = () => {
           </View>
           <View style={styles.sliderContainer}>
             <CustomAnimatedSlider
-              minimumValue={250}
-              maximumValue={2500}
-              step={250}
-              value={storeData?.deliveryRadius || 2500}
+              minimumValue={0}
+              maximumValue={3500}
+              step={500}
+              value={storeData?.deliveryRadius || 3500}
               onSlidingComplete={(val: number) => updateStore({ deliveryRadius: val })}
             />
             <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabelText}>0.25 km</Text>
-              <Text style={styles.sliderLabelText}>2.5 km</Text>
+              <Text style={styles.sliderLabelText}>0 km</Text>
+              <Text style={styles.sliderLabelText}>3.5 km</Text>
             </View>
+          </View>
+        </View>
+
+        <View style={styles.fullCard}>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardTitleRow}>
+              <MaterialIcons name="support-agent" size={18} color={COLORS.primary} style={styles.cardIcon} />
+              <Text style={styles.cardTitle}>Support & Settings</Text>
+            </View>
+          </View>
+          <View style={styles.settingsList}>
+            <Pressable style={styles.settingsItem}>
+              <View style={styles.settingsItemLeft}>
+                <View style={styles.settingsIconContainer}>
+                  <MaterialIcons name="call" size={20} color={COLORS.onSurfaceVariant} />
+                </View>
+                <Text style={styles.settingsItemText}>Partner Support</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={COLORS.outlineVariant} />
+            </Pressable>
+            <Pressable style={styles.settingsItem}>
+              <View style={styles.settingsItemLeft}>
+                <View style={styles.settingsIconContainer}>
+                  <MaterialIcons name="settings" size={20} color={COLORS.onSurfaceVariant} />
+                </View>
+                <Text style={styles.settingsItemText}>App Settings</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={COLORS.outlineVariant} />
+            </Pressable>
           </View>
         </View>
 
         <View style={styles.logoutContainer}>
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutIcon}>🚪</Text>
+            <MaterialIcons name="logout" size={20} color={COLORS.tertiary} />
             <Text style={styles.logoutText}>Logout</Text>
           </Pressable>
         </View>
@@ -527,6 +457,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: COLORS.surface,
+    height: 60,
   },
   headerTitle: {
     fontSize: 20,
@@ -542,6 +473,9 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 40,
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
   },
   profileSection: {
     alignItems: 'center',
@@ -553,25 +487,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     position: 'relative',
   },
-  placeholderImage: {
+  profileImage: {
     width: 128,
     height: 128,
     borderRadius: 64,
-    backgroundColor: COLORS.primaryContainer,
     borderWidth: 4,
     borderColor: COLORS.surfaceContainerLowest,
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 2,
-  },
-  placeholderImageText: {
-    fontSize: 48,
-    color: COLORS.onSurface,
-    fontWeight: 'bold',
   },
   editBadge: {
     position: 'absolute',
@@ -591,11 +516,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  editIcon: {
-    fontSize: 14,
-  },
   storeName: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: COLORS.onSurface,
     marginBottom: 8,
@@ -616,20 +538,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.verifiedBg,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 16,
     marginBottom: 16,
   },
-  verifiedIcon: {
-    color: COLORS.verifiedText,
-    fontSize: 14,
-    marginRight: 4,
-    fontWeight: 'bold',
-  },
   verifiedText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.verifiedText,
+    marginLeft: 4,
   },
   ratingCard: {
     flexDirection: 'row',
@@ -652,14 +569,12 @@ const styles = StyleSheet.create({
   },
   ratingMeta: {
     alignItems: 'flex-start',
-  },
-  starIcon: {
-    color: COLORS.starText,
-    fontSize: 18,
+    justifyContent: 'center',
   },
   ratingCount: {
     fontSize: 12,
     color: COLORS.onSurfaceVariant,
+    marginTop: 2,
   },
   gridContainer: {
     flexDirection: 'row',
@@ -678,6 +593,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
     marginBottom: 12,
+    overflow: 'hidden',
   },
   fullCard: {
     width: '100%',
@@ -696,15 +612,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 12,
+    zIndex: 2,
   },
   cardTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
   cardIcon: {
-    fontSize: 16,
-    marginRight: 6,
+    marginRight: 8,
   },
   cardTitle: {
     fontSize: 14,
@@ -713,27 +628,82 @@ const styles = StyleSheet.create({
   },
   editButton: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: 16,
   },
   editButtonText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.primary,
   },
-  cardBodyText: {
-    fontSize: 14,
-    color: COLORS.onSurfaceVariant,
-    lineHeight: 20,
+  cardBodyOverlay: {
+    zIndex: 2,
   },
-  editInputDetail: {
+  cardBodyText: {
+    fontSize: 16,
+    color: COLORS.onSurfaceVariant,
+    lineHeight: 24,
+  },
+  hoursContainer: {
+    marginTop: 8,
+  },
+  hoursRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.outlineVariant + '4D',
+  },
+  hoursLabel: {
+    fontSize: 16,
+    color: COLORS.onSurfaceVariant,
+  },
+  hoursValue: {
     fontSize: 14,
+    fontWeight: '600',
     color: COLORS.onSurface,
+  },
+  radiusBadge: {
+    backgroundColor: 'rgba(87, 192, 196, 0.1)',
     borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
+    borderColor: COLORS.primaryContainer,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  radiusBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  settingsList: {
+    marginTop: 8,
+  },
+  settingsItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    padding: 8,
-    marginBottom: 8,
+  },
+  settingsItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingsIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.surfaceContainerHigh,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  settingsItemText: {
+    fontSize: 16,
+    color: COLORS.onSurface,
   },
   editInputAddress: {
     fontSize: 14,
@@ -757,7 +727,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   locationButtonIcon: {
-    fontSize: 14,
     marginRight: 6,
   },
   locationButtonText: {
@@ -776,144 +745,71 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
   },
-  statusDescription: {
-    fontSize: 12,
-    color: COLORS.onSurfaceVariant,
-    marginBottom: 12,
-    lineHeight: 16,
-  },
-  statusButtonsContainer: {
-    flexDirection: 'row',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-    overflow: 'hidden',
-  },
-  statusButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusButtonLeft: {
-    borderRightWidth: 1,
-    borderRightColor: COLORS.outlineVariant,
-  },
-  statusButtonRight: {
-  },
-  statusButtonActiveOpen: {
-    backgroundColor: COLORS.success,
-  },
-  statusButtonActiveClosed: {
-    backgroundColor: COLORS.error,
-  },
-  statusButtonInactive: {
-    backgroundColor: COLORS.surfaceContainerLowest,
-  },
-  statusButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  statusButtonTextActive: {
-    color: COLORS.surfaceContainerLowest,
-  },
-  statusButtonTextInactive: {
-    color: COLORS.onSurfaceVariant,
-  },
-  radiusBadge: {
-    backgroundColor: 'rgba(87, 192, 196, 0.1)',
-    borderWidth: 1,
-    borderColor: COLORS.primaryContainer,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  radiusBadgeText: {
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
   sliderContainer: {
-    marginTop: 8,
-    paddingVertical: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  sliderLabelText: {
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
   },
   customSliderWrapper: {
-    height: 32,
+    height: 40,
     justifyContent: 'center',
     position: 'relative',
-    marginHorizontal: 12,
-    marginBottom: 8,
   },
   customSliderTrack: {
+    height: 8,
+    backgroundColor: COLORS.outlineVariant,
+    borderRadius: 4,
+    width: '100%',
     position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 12,
-    backgroundColor: COLORS.surfaceVariant,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  customSliderTick: {
-    position: 'absolute',
-    width: 2,
-    height: '100%',
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    marginLeft: -1,
   },
   customSliderFill: {
+    height: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: 4,
     position: 'absolute',
     left: 0,
-    height: 12,
-    backgroundColor: COLORS.primary,
-    borderRadius: 6,
   },
   customSliderThumb: {
-    position: 'absolute',
-    left: -12,
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#fff',
-    borderWidth: 3,
-    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary,
+    position: 'absolute',
+    left: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
-  sliderLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 0,
-  },
-  sliderLabelText: {
-    fontSize: 12,
-    color: COLORS.onSurfaceVariant,
-    fontWeight: '600',
-  },
   logoutContainer: {
     marginTop: 24,
+    marginBottom: 32,
     alignItems: 'center',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 200,
-    minHeight: 48,
     borderWidth: 2,
     borderColor: COLORS.outlineVariant,
     borderRadius: 24,
-  },
-  logoutIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    minWidth: 200,
   },
   logoutText: {
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.tertiary,
-  },
+    marginLeft: 8,
+  }
 });
-

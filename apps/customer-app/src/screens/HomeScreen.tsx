@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import auth from '@react-native-firebase/auth';
 import { useProducts, useCategories, ProductResult } from '@quicky/api-client';
@@ -54,6 +54,14 @@ export function HomeScreen() {
 
   const { data: products, isLoading, isError, error, refetch } = useProducts(queryParams);
   const { data: categories = [] } = useCategories();
+
+  // Refetch products whenever the home screen comes into focus (e.g. from background or another tab)
+  // to ensure delisted/out of stock items are removed promptly
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);

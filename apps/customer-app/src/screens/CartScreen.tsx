@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -24,14 +24,8 @@ import {
   selectItemCount,
 } from '../stores/cartStore';
 import { useAuthStore } from '../stores/authStore';
-import { useAddresses, useAddAddress, Address } from '@quicky/api-client';
+import { useAddresses, useAddAddress, Address, useProducts, DELIVERY_FEES } from '@quicky/api-client';
 import { ROHINI_LAT, ROHINI_LNG } from '../hooks/useProductFilters';
-
-// Dynamic delivery fees based on PRD
-const SMALL_BASKET_FEE = 30;
-const SMALL_BASKET_THRESHOLD = 250;
-const STANDARD_DELIVERY_FEE = 15;
-const FREE_DELIVERY_THRESHOLD = 349;
 
 export function CartScreen() {
   const items = useCartStore((s) => s.items);
@@ -58,6 +52,36 @@ export function CartScreen() {
   const [pincode, setPincode] = useState('');
   const [state, setState] = useState('');
   const [instructions, setInstructions] = useState('');
+
+  // Auto-remove or auto-reduce items from cart that are no longer available in the full nearby catalog
+  const { data: products, refetch: refetchProducts } = useProducts({
+    lat: ROHINI_LAT,
+    lng: ROHINI_LNG,
+    radiusKm: 3,
+  });
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchProducts();
+    }, [refetchProducts])
+  );
+
+  useEffect(() => {
+    if (products && products.length > 0) {
+      items.forEach((cartItem) => {
+        const productStillAvailable = products.find(
+          (p) => `${p.catalogItem.id}_${p.expiryBucket}` === cartItem.id
+        );
+        if (!productStillAvailable) {
+          // Product is no longer in the catalog or out of stock nearby
+          removeItem(cartItem.id);
+        } else if (cartItem.quantity > productStillAvailable.totalStockQuantity) {
+          // Stock reduced, adjust cart quantity
+          updateQuantity(cartItem.id, productStillAvailable.totalStockQuantity);
+        }
+      });
+    }
+  }, [products, items, removeItem, updateQuantity]);
 
   // Auto-select the default address on load
   useEffect(() => {
@@ -100,9 +124,9 @@ export function CartScreen() {
   const isAddressAlreadySaved = selectedAddressId != null;
 
   const deliveryFee = 
-    subtotal >= FREE_DELIVERY_THRESHOLD ? 0 
-    : subtotal < SMALL_BASKET_THRESHOLD ? SMALL_BASKET_FEE 
-    : STANDARD_DELIVERY_FEE;
+    subtotal >= DELIVERY_FEES.FREE_DELIVERY_THRESHOLD ? 0 
+    : subtotal < DELIVERY_FEES.SMALL_BASKET_THRESHOLD ? DELIVERY_FEES.SMALL_BASKET_FEE 
+    : DELIVERY_FEES.STANDARD_FEE;
   const totalAmount = subtotal + deliveryFee;
 
   const handleContinueToPayment = () => {

@@ -46,3 +46,15 @@ export async function packTicket(storeId: string, ticketId: string): Promise<Ord
   const { data } = await client.post<{ data: OrderResult }>(`/tickets/${ticketId}/pack`, { storeId });
   return data.data;
 }
+
+export async function readyTicket(storeId: string, ticketId: string): Promise<OrderResult> {
+  const client = getApiClient();
+  const { data } = await client.post<{ data: OrderResult }>(`/tickets/${ticketId}/ready`, { storeId });
+  return data.data;
+}
+
+export async function deliverTicket(storeId: string, ticketId: string): Promise<OrderResult> {
+  const client = getApiClient();
+  const { data } = await client.post<{ data: OrderResult }>(`/tickets/${ticketId}/deliver`, { storeId });
+  return data.data;
+}

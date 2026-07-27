@@ -31,6 +31,7 @@ import { AddCustomProductScreen } from './screens/AddCustomProduct';
 import { StoreProfileScreen } from './screens/StoreProfileScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
 import { SalesSummaryScreen } from './screens/SalesSummary';
+import { OrderSummaryScreen } from './screens/OrderSummaryScreen';
 import { setupFCMHandlers, requestUserPermission } from './services/fcm';
 
 import { LoginScreen } from './screens/LoginScreen';
@@ -53,6 +54,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Notifications: undefined;
   SalesSummary: undefined;
+  OrderSummary: { ticketId: string };
 };
 
 export type AuthStackParamList = {
@@ -346,6 +348,11 @@ const App = () => {
                   name="SalesSummary" 
                   component={SalesSummaryScreen} 
                   options={{ title: 'Sales Summary' }}
+                />
+                <Stack.Screen 
+                  name="OrderSummary" 
+                  component={OrderSummaryScreen} 
+                  options={{ headerShown: false }}
                 />
               </Stack.Navigator>
             ) : (

@@ -110,7 +110,7 @@ router.post('/:storeId/listings', authenticateToken, async (req, res) => {
     if (req.user.uid !== storeId) {
       return res.status(403).json({ error: 'Forbidden: Cannot modify another store' });
     }
-    const { catalogItemId, price, stockQuantity, expiryBucket, isCustom, name, unit, imageUrl } = req.body;
+    const { catalogItemId, price, stockQuantity, expiryBucket, isCustom, name, unit, imageUrl, categoryId } = req.body;
 
     if (!catalogItemId || stockQuantity === undefined || !expiryBucket) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -123,7 +123,8 @@ router.post('/:storeId/listings', authenticateToken, async (req, res) => {
       isCustom,
       name,
       unit,
-      imageUrl
+      imageUrl,
+      categoryId
     });
 
     res.json(listing);
@@ -148,6 +149,37 @@ router.delete('/:storeId/listings/:listingId', authenticateToken, async (req, re
   } catch (error) {
     console.error('Error deleting listing:', error);
     res.status(500).json({ error: 'Failed to delete listing' });
+  }
+});
+
+// ADD DEBUG ROUTE TO FORCE STORE OPEN
+router.get('/debug/force-open', async (req, res) => {
+  try {
+    const { prisma } = require('../db/prisma');
+    const store = await prisma.store.updateMany({
+      where: {},
+      data: { isOpen: true }
+    });
+    res.json({ message: 'All stores set to open', count: store.count });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ADD DEBUG ROUTE FOR REDIS GEO
+router.get('/debug/geo', async (req, res) => {
+  try {
+    const { redis } = require('../utils/redis');
+    const result = await redis.geosearch(
+      'quicky:stores:locations',
+      'FROMLONLAT', 77.1025, 28.7041,
+      'BYRADIUS', 5000, 'km', 
+      'ASC',
+      'WITHDIST'
+    );
+    res.json({ geo: result });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
   }
 });
 

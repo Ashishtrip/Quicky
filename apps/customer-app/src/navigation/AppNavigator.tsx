@@ -14,6 +14,7 @@ import { ProductDetailScreen } from '../screens/ProductDetailScreen';
 import { CartScreen } from '../screens/CartScreen';
 import { PaymentMethodScreen } from '../screens/PaymentMethodScreen';
 import { OrderStatusScreen } from '../screens/OrderStatusScreen';
+import { MyOrderScreen } from '../screens/MyOrderScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { SignupScreen } from '../screens/SignupScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   Feedback: undefined;
   About: undefined;
   OrderStatus: { orderId: string; initialStatus?: string; initialOrderData?: any };
+  MyOrder: { orderId: string; initialOrderData?: any };
   Onboarding: undefined;
   Splash: undefined;
   Login: undefined;
@@ -238,6 +240,7 @@ export function AppNavigator({ isReady, isAuthLoading }: { isReady: boolean, isA
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
             <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
             <Stack.Screen name="OrderStatus" component={OrderStatusScreen} />
+            <Stack.Screen name="MyOrder" component={MyOrderScreen} />
             <Stack.Screen name="ManageAddresses" component={ManageAddressesScreen} />
             <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
             <Stack.Screen name="Feedback" component={FeedbackScreen} />
