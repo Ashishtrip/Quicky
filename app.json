@@ -6,9 +6,7 @@
     "bundleIdentifier": "com.anonymous.quicky"
   },
   "extra": {
-    "eas": {
-      "projectId": "c264304b-611d-4b4b-8360-221bd550ab1b"
-    }
+    "eas": {}
   },
   "owner": "trriippeerrs-team"
 }

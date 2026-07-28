@@ -33,7 +33,11 @@
     ],
     "android": {
       "package": "com.quicky.store",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.quicky.store",
@@ -42,9 +46,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "7bff5b49-ab33-417d-9e13-94db2cd1317b"
+        "projectId": "87bd697a-aec3-4c55-9819-ed68d423b41e"
       }
     },
-    "owner": "trriippeerr"
+    "owner": "ttrriippeerr"
   }
 }
