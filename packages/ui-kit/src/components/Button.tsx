@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Pressable, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 import { Colors, Radii, Typography, Interaction } from '../theme';
 
 export interface ButtonProps {
@@ -9,6 +9,7 @@ export interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   disabled?: boolean;
+  loading?: boolean;
   icon?: React.ReactNode;
 }
 
@@ -28,6 +29,7 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
   disabled,
+  loading,
   icon,
 }) => {
   const variantStyles = VARIANT_STYLES[variant];
@@ -38,14 +40,17 @@ export const Button: React.FC<ButtonProps> = ({
       style={({ pressed }) => [
         styles.container,
         variantStyles.container,
-        disabled && styles.disabled,
-        pressed && !disabled && styles.pressed,
+        (disabled || loading) && styles.disabled,
+        pressed && !(disabled || loading) && styles.pressed,
         style,
       ]}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled: disabled || loading }}
     >
-      <Text
+      {loading ? (
+        <ActivityIndicator color={variantStyles.text.color as string} size="small" />
+      ) : (
+        <Text
         style={[
           styles.text,
           variantStyles.text,
@@ -56,6 +61,7 @@ export const Button: React.FC<ButtonProps> = ({
         {icon}
         {title}
       </Text>
+      )}
     </Pressable>
   );
 };

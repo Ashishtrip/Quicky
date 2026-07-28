@@ -38,6 +38,7 @@ export const LoginForm = ({ onSubmit, onNavigateToSignup, isLoading }: LoginForm
         title={isLoading ? 'Logging in...' : 'Login'}
         onPress={() => onSubmit(email, password)}
         disabled={isLoading || !email || !password}
+        loading={isLoading}
         style={styles.submitButton}
       />
 

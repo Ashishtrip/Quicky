@@ -208,7 +208,8 @@ export const ManageAddressesScreen = () => {
               <Button 
                 title="Save Address" 
                 onPress={handleSaveAddress}
-                disabled={!newAddress.street || !newAddress.city || !newAddress.pincode}
+                disabled={!newAddress.street || !newAddress.city || !newAddress.pincode || addAddressMutation.isPending}
+                loading={addAddressMutation.isPending}
               />
             </View>
           </View>

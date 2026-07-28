@@ -29,7 +29,7 @@ export interface ApiClientConfig {
 export function initApiClient(config: ApiClientConfig = {}): AxiosInstance {
   _client = axios.create({
     baseURL: config.baseUrl || DEFAULT_BASE_URL,
-    timeout: config.timeout || 15_000,
+    timeout: config.timeout || 30_000,
     headers: {
       'Content-Type': 'application/json',
       'Bypass-Tunnel-Reminder': 'true',

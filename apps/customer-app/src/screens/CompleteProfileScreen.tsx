@@ -195,6 +195,7 @@ export const CompleteProfileScreen = () => {
           title={updateUserProfile.isPending ? "Saving..." : "Save Profile"}
           onPress={handleSave}
           disabled={!formData.name || !formData.phone || updateUserProfile.isPending}
+          loading={updateUserProfile.isPending}
         />
       </View>
     </SafeAreaView>

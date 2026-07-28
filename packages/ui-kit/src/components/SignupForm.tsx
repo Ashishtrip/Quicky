@@ -65,6 +65,7 @@ export const SignupForm = ({ onSubmit, extraFields = [], onNavigateToLogin, isLo
         title={isLoading ? 'Signing up...' : 'Sign Up'}
         onPress={() => onSubmit(formData)}
         disabled={isLoading || !isFormValid}
+        loading={isLoading}
         style={styles.submitButton}
       />
 
