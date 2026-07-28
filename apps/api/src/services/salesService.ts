@@ -18,7 +18,7 @@ export const getSalesMetrics = async (
     where: {
       assignedStoreId: storeId,
       status: 'FULFILLED',
-      ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+      ...(Object.keys(dateFilter).length > 0 && { updatedAt: dateFilter }),
     },
   });
 
@@ -30,7 +30,7 @@ export const getSalesMetrics = async (
     where: {
       assignedStoreId: storeId,
       status: 'FULFILLED',
-      ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+      ...(Object.keys(dateFilter).length > 0 && { updatedAt: dateFilter }),
     },
   });
 
@@ -44,7 +44,7 @@ export const getSalesMetrics = async (
       order: {
         assignedStoreId: storeId,
         status: 'FULFILLED',
-        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+        ...(Object.keys(dateFilter).length > 0 && { updatedAt: dateFilter }),
       },
     },
   });
@@ -65,13 +65,13 @@ export const getWeeklyOrderVolume = async (
     where: {
       assignedStoreId: storeId,
       status: 'FULFILLED',
-      createdAt: {
+      updatedAt: {
         gte: new Date(weekStart),
         lte: new Date(weekEnd),
       },
     },
     select: {
-      createdAt: true,
+      updatedAt: true,
     },
   });
 
@@ -81,7 +81,7 @@ export const getWeeklyOrderVolume = async (
   orders.forEach(order => {
     // getDay() returns 0 (Sun) to 6 (Sat)
     // We want Mon (0) to Sun (6)
-    const day = order.createdAt.getDay();
+    const day = order.updatedAt.getDay();
     const index = day === 0 ? 6 : day - 1;
     volume[index] = (volume[index] || 0) + 1;
   });

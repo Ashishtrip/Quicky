@@ -6,6 +6,7 @@ import { Colors, Typography, Radii, Spacing } from '@quicky/ui-kit';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type OrdersScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -43,7 +44,6 @@ export function OrdersScreen() {
   const pastOrders = orders?.filter(o => o.status === 'FULFILLED' || o.status === 'DELIVERED' || o.status === 'CANCELLED') || [];
 
   const handleOrderPress = (item: OrderResult) => {
-    // Legacy single screen if they tap the card (optional, can also just expand)
     if (item.status === 'PENDING') {
       navigation.navigate('OrderStatus', { 
         orderId: item.id,
@@ -129,7 +129,7 @@ export function OrdersScreen() {
                 <View style={styles.mapPlaceholder}>
                    <View style={styles.mapBadge}>
                      <View style={styles.pulseDot} />
-                     <Text style={styles.mapBadgeText}>On the way</Text>
+                     <Text style={styles.mapBadgeText}>12 mins</Text>
                    </View>
                 </View>
                 <View style={styles.deliveryInfo}>
@@ -144,8 +144,8 @@ export function OrdersScreen() {
                   </View>
                   
                   <View style={styles.progressBar}>
-                    <View style={[styles.progressSegment, { backgroundColor: Colors.primaryContainer }]} />
-                    <View style={[styles.progressSegment, { backgroundColor: Colors.primaryContainer }]} />
+                    <View style={[styles.progressSegment, { backgroundColor: '#516607' }]} />
+                    <View style={[styles.progressSegment, { backgroundColor: '#516607' }]} />
                     <View style={[styles.progressSegment, { backgroundColor: Colors.primary }]} />
                     <View style={[styles.progressSegment, { backgroundColor: Colors.surfaceDim }]} />
                   </View>
@@ -166,14 +166,15 @@ export function OrdersScreen() {
             <Text style={styles.sectionTitle}>Processing</Text>
             {processingOrders.map(order => (
               <View key={order.id} style={styles.processingCard}>
-                <View style={styles.processingHeaderRow}>
+                <View style={styles.processingMainRow}>
                   <View style={styles.processingIconContainer}>
-                    <Text style={styles.processingIcon}>🛍️</Text>
+                    <MaterialIcons name="shopping-bag" size={24} color="#516607" />
                   </View>
                   <View style={styles.processingInfo}>
                     <Text style={styles.orderIdText}>Order #{order.id.slice(0, 8).toUpperCase()}</Text>
                     <Text style={styles.orderSubtitle}>{order.assignedStore?.name || 'Quicky Hub'} • {order.items?.length || 0} items</Text>
                     <View style={styles.statusRow}>
+                      <MaterialIcons name="inventory-2" size={16} color="#516607" />
                       <Text style={styles.statusText}>{order.status === 'PENDING' ? 'Finding store' : 'Packing items'}</Text>
                     </View>
                   </View>
@@ -201,7 +202,7 @@ export function OrdersScreen() {
                 <View style={styles.pastHeader}>
                   <View style={styles.pastInfoRow}>
                     <View style={styles.pastImageContainer}>
-                      <Text style={styles.pastImageIcon}>🏪</Text>
+                      <MaterialIcons name="storefront" size={20} color={Colors.textSecondary} />
                     </View>
                     <View>
                       <Text style={styles.pastStoreName}>{order.assignedStore?.name || 'Quicky Hub'}</Text>
@@ -210,8 +211,9 @@ export function OrdersScreen() {
                       </Text>
                     </View>
                   </View>
-                  <View style={[styles.pastStatusBadge, { backgroundColor: order.status === 'CANCELLED' ? Colors.freshRedBg : Colors.freshGreenBg }]}>
-                    <Text style={[styles.pastStatusText, { color: order.status === 'CANCELLED' ? Colors.freshRed : Colors.freshGreen }]}>
+                  <View style={[styles.pastStatusBadge, { backgroundColor: order.status === 'CANCELLED' ? '#ffdad6' : 'rgba(211, 237, 132, 0.3)' }]}>
+                    <MaterialIcons name="check-circle" size={12} color={order.status === 'CANCELLED' ? '#ba1a1a' : '#516607'} style={{marginRight: 4}} />
+                    <Text style={[styles.pastStatusText, { color: order.status === 'CANCELLED' ? '#ba1a1a' : '#516607' }]}>
                       {order.status === 'CANCELLED' ? 'Cancelled' : 'Delivered'}
                     </Text>
                   </View>
@@ -248,11 +250,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.md,
     backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   headerTitle: {
-    ...Typography.h1,
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   scrollContent: {
@@ -263,15 +265,17 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    ...Typography.h2,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   deliveryCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#eaefee',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -279,20 +283,29 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
     flexDirection: 'column',
+    marginBottom: Spacing.md,
   },
   mapPlaceholder: {
-    height: 120,
-    backgroundColor: Colors.surfaceDim,
+    height: 128,
+    backgroundColor: '#dfe3e3',
     padding: Spacing.sm,
+    position: 'relative',
   },
   mapBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: Radii.pill,
-    paddingHorizontal: Spacing.sm,
+    borderRadius: 9999,
+    paddingHorizontal: 12,
     paddingVertical: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   pulseDot: {
     width: 8,
@@ -302,7 +315,10 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   mapBadgeText: {
-    ...Typography.caption,
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 0.5,
+    fontWeight: '700',
     color: Colors.textPrimary,
   },
   deliveryInfo: {
@@ -315,22 +331,29 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   orderIdText: {
-    ...Typography.h2,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   orderSubtitle: {
-    ...Typography.bodySmall,
-    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400',
+    color: '#3d4949',
     marginTop: 2,
   },
   statusBadge: {
-    backgroundColor: Colors.primaryContainer + '33', // 20% opacity approx
+    backgroundColor: 'rgba(87, 192, 196, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: Radii.sm,
+    borderRadius: 6,
   },
   statusBadgeText: {
-    ...Typography.bodySmall,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.2,
+    fontWeight: '600',
     color: Colors.primary,
   },
   progressBar: {
@@ -345,21 +368,23 @@ const styles = StyleSheet.create({
   },
   trackButton: {
     backgroundColor: Colors.primaryContainer,
-    borderRadius: Radii.lg,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
     alignSelf: 'flex-end',
     marginTop: Spacing.lg,
   },
   trackButtonText: {
-    ...Typography.bodyLarge,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
     color: Colors.onPrimaryContainer,
   },
   processingCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#eaefee',
     padding: Spacing.md,
     flexDirection: 'column',
     shadowColor: '#000',
@@ -367,19 +392,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  processingMainRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   processingIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.primaryContainer + '4D', // 30% opacity
+    backgroundColor: 'rgba(211, 237, 132, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
-  },
-  processingIcon: {
-    fontSize: 20,
   },
   processingInfo: {
     flex: 1,
@@ -390,26 +416,34 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   statusText: {
-    ...Typography.caption,
-    color: Colors.primaryContainer,
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 0.5,
+    fontWeight: '700',
+    color: '#516607',
+    marginLeft: 4,
   },
   processingPriceContainer: {
     alignItems: 'flex-end',
   },
   priceText: {
-    ...Typography.h2,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   etaText: {
-    ...Typography.bodySmall,
-    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400',
+    color: '#3d4949',
     marginTop: 2,
   },
   pastCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#eaefee',
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     shadowColor: '#000',
@@ -417,6 +451,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+    flexDirection: 'column',
   },
   pastHeader: {
     flexDirection: 'row',
@@ -431,30 +466,36 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: Colors.surfaceDim,
+    backgroundColor: '#e4e9e9',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
   },
-  pastImageIcon: {
-    fontSize: 20,
-  },
   pastStoreName: {
-    ...Typography.bodyLarge,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   pastOrderMeta: {
-    ...Typography.bodySmall,
-    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400',
+    color: '#3d4949',
     marginTop: 2,
   },
   pastStatusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   pastStatusText: {
-    ...Typography.caption,
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 0.5,
+    fontWeight: '700',
   },
   pastFooter: {
     flexDirection: 'row',
@@ -463,16 +504,19 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.surfaceDim,
+    borderTopColor: '#dfe3e3',
   },
   reorderButton: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
-    borderRadius: Radii.lg,
-    backgroundColor: Colors.surface,
+    borderRadius: 8,
+    backgroundColor: '#f0f4f4',
   },
   reorderButtonText: {
-    ...Typography.bodySmall,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.2,
+    fontWeight: '600',
     color: Colors.primary,
   },
   center: {
@@ -482,19 +526,21 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
   },
   errorText: {
-    ...Typography.bodyLarge,
+    fontSize: 16,
+    lineHeight: 24,
     color: Colors.error,
     marginBottom: Spacing.md,
   },
   retryButton: {
     borderWidth: 1,
     borderColor: Colors.borderStrong,
-    borderRadius: Radii.pill,
+    borderRadius: 9999,
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.sm,
   },
   retryText: {
-    ...Typography.bodyLarge,
+    fontSize: 16,
+    lineHeight: 24,
     color: Colors.textPrimary,
   },
   stepperContainer: {
@@ -541,26 +587,29 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   stepLabel: {
-    ...Typography.bodyLarge,
+    fontSize: 16,
+    lineHeight: 24,
     color: Colors.textSecondary,
-    paddingTop: -2, // Align with dot
+    paddingTop: -2,
   },
   stepLabelActive: {
-    ...Typography.h2,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
-  processingHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   emptyTitle: {
-    ...Typography.h2,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   emptyText: {
-    ...Typography.bodyLarge,
+    fontSize: 16,
+    lineHeight: 24,
     color: Colors.textSecondary,
     textAlign: 'center',
   },
 });
+

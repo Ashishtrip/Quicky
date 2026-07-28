@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, Animated, PanResponder, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, Animated, PanResponder, Image, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/authStore';
 import auth from '@react-native-firebase/auth';
@@ -102,12 +102,29 @@ const CustomAnimatedSlider = ({ value, minimumValue, maximumValue, step, onSlidi
     })
   ).current;
 
+  const stepsCount = Math.round((maximumValue - minimumValue) / step);
+  const dots = Array.from({ length: stepsCount + 1 }).map((_, index) => {
+    const dotValue = minimumValue + index * step;
+    const isActive = value >= dotValue;
+    return (
+      <View 
+        key={index}
+        style={[
+          styles.sliderDot,
+          { left: `${(index / stepsCount) * 100}%` },
+          isActive ? styles.sliderDotActive : styles.sliderDotInactive
+        ]}
+      />
+    );
+  });
+
   return (
     <View 
       style={styles.customSliderWrapper} 
       onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
     >
       <View style={styles.customSliderTrack} />
+      {dots}
       <Animated.View 
         style={[
           styles.customSliderFill, 
@@ -355,21 +372,20 @@ export const StoreProfileScreen = () => {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.cardTitleRow}>
-                <MaterialIcons name="schedule" size={18} color={COLORS.primary} style={styles.cardIcon} />
-                <Text style={styles.cardTitle}>Operating Hours</Text>
+                <MaterialIcons name="store" size={18} color={COLORS.primary} style={styles.cardIcon} />
+                <Text style={styles.cardTitle}>Store Status</Text>
               </View>
-              <Pressable style={styles.editButton}>
-                <Text style={styles.editButtonText}>Edit</Text>
-              </Pressable>
             </View>
             <View style={styles.hoursContainer}>
-              <View style={styles.hoursRow}>
-                <Text style={styles.hoursLabel}>Mon-Fri</Text>
-                <Text style={styles.hoursValue}>7am - 10pm</Text>
-              </View>
               <View style={[styles.hoursRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.hoursLabel}>Sat-Sun</Text>
-                <Text style={styles.hoursValue}>8am - 11pm</Text>
+                <Text style={styles.hoursLabel}>{storeData?.isOpen ? 'Currently Open' : 'Currently Closed'}</Text>
+                <Switch
+                  trackColor={{ false: COLORS.outlineVariant, true: COLORS.primaryContainer }}
+                  thumbColor={storeData?.isOpen ? COLORS.primary : '#f4f3f4'}
+                  ios_backgroundColor={COLORS.outlineVariant}
+                  onValueChange={(val) => updateStore({ isOpen: val })}
+                  value={storeData?.isOpen || false}
+                />
               </View>
             </View>
           </View>
@@ -387,15 +403,15 @@ export const StoreProfileScreen = () => {
           </View>
           <View style={styles.sliderContainer}>
             <CustomAnimatedSlider
-              minimumValue={0}
-              maximumValue={3500}
+              minimumValue={500}
+              maximumValue={3000}
               step={500}
-              value={storeData?.deliveryRadius || 3500}
+              value={storeData?.deliveryRadius || 2500}
               onSlidingComplete={(val: number) => updateStore({ deliveryRadius: val })}
             />
             <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabelText}>0 km</Text>
-              <Text style={styles.sliderLabelText}>3.5 km</Text>
+              <Text style={styles.sliderLabelText}>0.5 km</Text>
+              <Text style={styles.sliderLabelText}>3 km</Text>
             </View>
           </View>
         </View>
@@ -789,6 +805,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+    zIndex: 3,
+  },
+  sliderDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    position: 'absolute',
+    top: 16,
+    transform: [{ translateX: -4 }],
+    zIndex: 2,
+  },
+  sliderDotActive: {
+    backgroundColor: '#fff',
+  },
+  sliderDotInactive: {
+    backgroundColor: COLORS.outlineVariant,
   },
   logoutContainer: {
     marginTop: 24,

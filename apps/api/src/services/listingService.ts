@@ -30,7 +30,7 @@ export const upsertListing = async (
   // Auto-heal missing store (common in local dev when DB is wiped but Firebase Auth persists)
   const storeExists = await prisma.store.findUnique({ where: { id: actualStoreId } });
   if (!storeExists) {
-    await prisma.store.create({
+    const newStore = await prisma.store.create({
       data: {
         id: actualStoreId,
         name: 'Quicky Store (Auto-healed)',
@@ -44,6 +44,12 @@ export const upsertListing = async (
         isOpen: true,
       }
     });
+    try {
+      const { redis } = require('../utils/redis');
+      await redis.geoadd('quicky:stores:locations', newStore.longitude, newStore.latitude, newStore.id);
+    } catch (e) {
+      console.warn('Failed to add auto-healed store to Redis geo-index', e);
+    }
   }
 
   let finalPrice: number = 0;

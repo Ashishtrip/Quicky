@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCatalog, useStoreListings, useDeleteListing } from '../hooks/useTagging';
+import { useCategories } from '@quicky/api-client';
 import { useNotificationStore } from '../stores/notificationStore';
 import { RootStackParamList } from '../index';
 
@@ -37,6 +38,8 @@ export const CatalogScreen = ({ navigation }: { navigation: NavigationProp }) =>
   const { mutate: deleteListing } = useDeleteListing();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const { data: categories = [] } = useCategories();
   const unreadCount = useNotificationStore(state => state.notifications.filter(n => !n.read).length);
 
   const isLoading = isCatalogLoading || isListingsLoading;
@@ -46,11 +49,13 @@ export const CatalogScreen = ({ navigation }: { navigation: NavigationProp }) =>
   if (error) return <View style={styles.center}><Text style={styles.errorText}>Error loading data.</Text></View>;
 
   const filteredCatalog = catalog?.filter((item: any) => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (!selectedCategoryId || item.categoryId === selectedCategoryId)
   ) || [];
 
   const filteredListings = listings?.filter((listing: any) => 
-    listing.catalogItem?.name.toLowerCase().includes(searchQuery.toLowerCase())
+    listing.catalogItem?.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (!selectedCategoryId || listing.catalogItem?.categoryId === selectedCategoryId)
   ) || [];
 
   const displayData = activeTab === 'inventory' ? filteredListings : filteredCatalog;
@@ -102,6 +107,27 @@ export const CatalogScreen = ({ navigation }: { navigation: NavigationProp }) =>
             onChangeText={setSearchQuery}
           />
         </View>
+      </View>
+
+      {/* Category Filters */}
+      <View style={styles.categoriesWrapper}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+          <Pressable 
+            style={[styles.categoryChip, !selectedCategoryId && styles.categoryChipActive]}
+            onPress={() => setSelectedCategoryId(null)}
+          >
+            <Text style={[styles.categoryChipText, !selectedCategoryId && styles.categoryChipTextActive]}>All</Text>
+          </Pressable>
+          {categories.map((cat: any) => (
+            <Pressable 
+              key={cat.id}
+              style={[styles.categoryChip, selectedCategoryId === cat.id && styles.categoryChipActive]}
+              onPress={() => setSelectedCategoryId(cat.id)}
+            >
+              <Text style={[styles.categoryChipText, selectedCategoryId === cat.id && styles.categoryChipTextActive]}>{cat.name}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
       {/* List */}
@@ -345,6 +371,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.onSurface,
     height: '100%',
+  },
+  categoriesWrapper: {
+    backgroundColor: COLORS.background,
+    paddingBottom: 8,
+  },
+  categoriesContainer: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.surfaceContainerHigh,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    marginRight: 8,
+  },
+  categoryChipActive: {
+    backgroundColor: COLORS.primaryContainer,
+    borderColor: COLORS.primaryContainer,
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: COLORS.onSurfaceVariant,
+    fontWeight: '500',
+  },
+  categoryChipTextActive: {
+    color: COLORS.onPrimaryContainer,
+    fontWeight: '600',
   },
   listContent: {
     padding: 16,
