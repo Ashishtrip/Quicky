@@ -17,6 +17,12 @@ import { storeLocationQueue } from './services/store-location.service';
 dotenv.config();
 
 const app = express();
+
+// Add this route ABOVE your logger middleware so it stays silent
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -103,11 +109,6 @@ app.use('/orders', ordersRouter);
 app.use('/orders/:orderId/rating', ratingRoutes);
 app.use('/addresses', addressRoutes);
 app.use('/users', usersRouter);
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date() });
-});
 
 const PORT = process.env['PORT'] || 3000;
 
