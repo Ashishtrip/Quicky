@@ -267,7 +267,7 @@ export const InboxScreen = () => {
                   <Text style={styles.snapshotLabel}>ORDERS FULFILLED</Text>
                   <View style={styles.snapshotValueRow}>
                     <Text style={styles.snapshotValue}>{metrics?.fulfilledOrders || 0}</Text>
-                    <MaterialIcons name="check-circle" size={18} color={COLORS.secondary} />
+                    <MaterialIcons name="check-circle" size={18} color={COLORS.primary} />
                   </View>
                 </Pressable>
               </View>
